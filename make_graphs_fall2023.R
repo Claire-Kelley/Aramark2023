@@ -7,14 +7,14 @@ library(grid)
 library(circlize)
 library(ggrepel)
 library(gt)
-library(wordcloud)
-library(wordcloud2)
+#library(wordcloud)
+#library(wordcloud2)
 library(htmlwidgets) 
 #install.packages("webshot")
 #webshot::install_phantomjs()
 
 #setwd("~/Consulting/Qualtrics/Aramark2022/Fall 2022")
-#setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark_Spring_2023/AramarkFall2022")
+setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark2023")
 
 
 
@@ -34,11 +34,16 @@ tab_col <- c("#faccd4","#f47f94")
 roundQual <- function(x,n){floor(x+.5)}
 
 ## Read in Data
-last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
-#last_path <- '/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark_Spring_2023/AramarkFall2022/data_files'
+#last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
+last_path <- 'data_files'
 ### 
-last_data <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
+
+#todo: double check i have the right data file
+last_data <- read.csv(paste0(last_path,"/spring2023_temp.csv"),stringsAsFactors=FALSE)
 last_data <- last_data[3:nrow(last_data),]
+
+last_data_fall_22 <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
+last_data_fall_22 <- last_data_fall_22[3:nrow(last_data_fall_22),]
 
 last_data_spring_22 <- read.csv(paste0(last_path,'/Spring_2022_v4.csv'),stringsAsFactors=FALSE)
 last_data_spring_22 <- last_data_spring_22[3:nrow(last_data_spring_22),]
@@ -69,22 +74,16 @@ last_data_fall20 <- read.csv(paste0(last_path,'/fall2020_V2.csv'),stringsAsFacto
 last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
 
 
-data<- read.csv("spring2023_final.csv",stringsAsFactors=FALSE)
+data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
 # merge in names
-outlets <- read.csv("Spring2023_outlets.csv")
+#TODO: sarah to get outlets name files
+outlets <- read.csv("Fall2022_outlets.csv")
 
 
 # NOTE THIS ONLY WORKS for all USA 
 data$SCHOOL_USA <- data$SCHOOL_NAME  
-
-
-# NOTE THIS ONLY WORKS for all USA 
-data$SCHOOL_USA <- data$SCHOOL_NAME  
-
-
-
 
 data$SCHOOL_NAME <- ifelse(data$SCHOOL_NAME =="Simmons College","Simmons University", data$SCHOOL_NAME)
 data$SCHOOL_USA <- data$SCHOOL_NAME
@@ -119,11 +118,11 @@ all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %i
 #for working
 UNIVERSITY_NAME <-  "University of Virginia"
 data_last <- last_data
-last_year ="Fall 2022"
+last_year ="Spring 2023"
 
 
 
-get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_leg=-.5,slide32_leg = .19,last_year ="Fall 2022", is_ca=F,is_harvest=F){
+get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_leg=-.5,slide32_leg = .19,last_year ="Spring 2023", is_ca=F,is_harvest=F){
 
   ## SET up parameters 
   UNIVERSITY_NAME_WRAP <- paste(strwrap(UNIVERSITY_NAME,13),collapse = "\n")
@@ -132,15 +131,27 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   UNIVERSITY_NAME_MED <- ifelse(nchar(UNIVERSITY_NAME) >= 30, paste(strwrap(UNIVERSITY_NAME,30),collapse = "\n  "), UNIVERSITY_NAME)
   
   # set up years
-  this_year <- "Spring 2023"
+  this_year <- "Fall 2023"
   
-  # make directory for graphs_spring_2023/
-  loc <- "graphs_spring_2023/"
+  # make directory for graphs_fall_2023/
+  loc <- "graphs_fall_2023/"
   dir.create(paste0(loc,UNIVERSITY_NAME))
   
+  #Fix some wierdnesses in region names
+  #som have 'EAST' as region instead of eastern and same for Central
+  data$REGION_NAME <- ifelse(data$REGION_NAME=='EAST', 'East Region', data$REGION_NAME)
+  data$REGION_NAME <- ifelse(data$REGION_NAME=='CENTRAL', 'Central Region', data$REGION_NAME)
+  
+  data_last$REGION_NAME <- ifelse(data_last$REGION_NAME=='EAST', 'East Region', data_last$REGION_NAME)
+  data_last$REGION_NAME <- ifelse(data_last$REGION_NAME=='CENTRAL', 'Central Region', data_last$REGION_NAME)
+  
+  
+  
   # make student only data set 
+  #CLAIRE
+  #TOCHECK: Are we sure we want all the others? to me thsoe don't seem like students in either data set
   data_c <- data 
-  data <- data %>% filter(grepl("student|Other",Q1.1))
+  data <- data %>% filter(grepl("student|Other",Q2))
   
   # do same for last year 
   data_c_last <- data_last 
@@ -162,30 +173,28 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   
   #get region
+
+  
+  
   region <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
     select(REGION_NAME) %>% slice(1)
   REGION <- region[[1]]
+  
+ 
 
   data_region_c <- data_c[data_c$REGION_NAME==REGION,]
-  data_region <- data_region_c %>% filter(grepl("student|Other",Q1.1))
+  data_region <- data_region_c %>% filter(grepl("student|Other",Q2))
   
-  #last time east region was just EAST
-  if (REGION == 'East Region'){
-    data_region_c_last <- filter(data_c_last, REGION_NAME=="East")
-    data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
-  } else{
-    
-    data_region_c_last <- filter(data_c_last, REGION_NAME==REGION)
-    data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
-    
-  }
+ 
+  data_region_c_last <- filter(data_c_last, REGION_NAME==REGION)
+  data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
 
   #get market segment
   market_seg <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
     select(MARKET_SEGMENT) %>% slice(1)
   MARKET_SEG <- market_seg[[1]]
   data_market_c <- filter(data_c, MARKET_SEGMENT==MARKET_SEG)
-  data_market <- data_market_c %>% filter(grepl("student|Other",Q1.1))
+  data_market <- data_market_c %>% filter(grepl("student|Other",Q2))
   
   
   
