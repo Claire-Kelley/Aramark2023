@@ -209,12 +209,23 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
     }
     
     if (uselast==T){
-      data <- data_c_last
+      data <- data_c_last 
       data_school <- data_school_c_last
       data_region <- data_region_c_last
     }
     
-    if (filter_enr==T){ # note this implies comp=T
+    if (filter_enr==T & uselast==F){ # note this implies comp=T
+      if (is_ca== F){
+        data <- data_c %>% filter(Q4=="Yes")
+        data_school <- data_school_c %>% filter(Q4=="Yes")
+        data_region <- data_region_c %>% filter(Q4=="Yes")
+      } else {
+        data <- data_c %>% filter(Q4ca=="Yes")
+        data_school <- data_school_c %>% filter(Q4ca=="Yes")
+        data_region <- data_region_c %>% filter(Q4ca=="Yes")
+      } 
+      
+    } else if (filter_enr==T & uselast==T){
       if (is_ca== F){
         data <- data_c %>% filter(Q1.8=="Yes")
         data_school <- data_school_c %>% filter(Q1.8=="Yes")
@@ -223,8 +234,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
         data <- data_c %>% filter(Q1.8ca=="Yes")
         data_school <- data_school_c %>% filter(Q1.8ca=="Yes")
         data_region <- data_region_c %>% filter(Q1.8ca=="Yes")
-      }
-      
+      } 
     }
     
     if (!is.null(filterV)){ # note this implies comp=T
@@ -496,33 +506,93 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideSat.png"),plot=sat_plot,width = 7, height=4.5,units="in")
   
+  #UPDATED
+  ####### Slide 5, Q13 - Satisfaction with specific dining locations
+  #Q13_1 to Q13_4
+  
+  sat <- data_grp_bar('Q13_1', stacked_labels=T,comp=T)
+  sat_1 <- sat %>% filter(!Location%in%c("Region", "Nation"))
+  sat_1$q <- "All you care to eat"
+  names(sat_1)[1] <- 'Q13'
+  sat <- data_grp_bar('Q13_2', stacked_labels=TRUE,comp=T)
+  sat_2 <- sat %>% filter(!Location%in%c("Region", "Nation"))
+  sat_2$q <- "Retail"
+  names(sat_2)[1] <- 'Q13'
+  sat <- data_grp_bar('Q13_3', stacked_labels=TRUE,comp=T)
+  sat_3 <- sat %>% filter(!Location%in%c("Region", "Nation"))
+  sat_3$q <- "Convenience Stores"
+  names(sat_3)[1] <- 'Q13'
+  sat <- data_grp_bar('Q13_4', stacked_labels=TRUE,comp=T)
+  sat_4 <- sat %>% filter(!Location%in%c("Region", "Nation"))
+  sat_4$q <- "Coffee Shops"
+  names(sat_4)[1] <- 'Q13'
   
   
   
+  sat <- bind_rows(sat_1, sat_2, sat_3, sat_4)
+  sat$hjust_var <- ifelse(sat$Percent<=4,-2.4,.5)
+  sat$Value <- as.factor(sat$Q13)
+  sat$label_col <- ifelse(sat$Value %in% c("Extremely Satisfied","Somewhat Satisfied"),"black","white")
+  #adust label color if it is off the side to be black
+  sat$label_col <- ifelse(sat$Percent<=4,'black', sat$label_col)
+  sat$Value <- factor(sat$Value, levels <- c( "Extremely Satisfied","Somewhat Satisfied","Neither Satisfied nor Dissatisfied", "Extremely Dissatisfied","Somewhat Dissatisfied"))
+  
+  
+  sat <- sat %>% filter(Q13!="N/A or Don't Know")
+  
+  sat$q<- factor(sat$q, levels = c("All you care to eat", "Retail", "Convenience Stores", "Coffee Shops"))
   
   
   
-  ####### Slide 8 - Satisfaction with value . Left
+  plot_outlet_sat <- ggplot(sat,aes(x=q,y=Percent,fill=Value,label=label)) + 
+    geom_bar(stat="identity",width=.5)+ 
+    #REplace repel ( geom_text_repel)
+    geom_text(aes(x=q,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,
+              size = 4, position = position_stack(vjust = 0.5),segment.alpha=0,segment.color= "white") +
+    scale_x_discrete(position = "top")  + 
+    scale_fill_manual(values=colors,labels=paste(" ",c("Extremely Satisfied","Somewhat Satisfied","Neither", "Extremely Dissatisfied","Somewhat Dissatisfied"))) +
+    scale_color_manual(values=c("black","white"))+
+    theme_minimal() + ylab("") + xlab("") + 
+    theme(panel.grid = element_blank(),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          # legend.position = "left", 
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent",colour = NA),
+          plot.margin = margin(l=6,r=.1, unit="cm"),
+          legend.position=c(0.01,0.5),
+          legend.margin=margin(t = 0, r = 2, unit='cm')) + guides(color=F)
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide5.png"),plot=plot_outlet_sat,width = 10, height=5,units="in",bg = "transparent")
+  
+  
+
+  #UPDATED
+  ################## Slide 6a Value Rating
   ## These are just students
   if (HAS_LAST){
-    sat <- data_grp_bar('Q2.4', stacked_labels=TRUE,comp=T)
+    sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=T)
     sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
     sat_this$year <- this_year
+    sat_this$Value <- sat_this$Q7
+    #NB: note the different question number in prior year
     sat_last <- data_grp_bar('Q2.4', stacked_labels=TRUE,uselast = T) %>% filter(!Location%in%c("Region", "Nation"))
     sat_last$year <- last_year
+    sat_last$Value <- sat_last$Q2.4
     sat <- bind_rows(sat_this,sat_last)
     sat$hjust_var <- ifelse(sat$Percent<=4,-2.4,.5)
     years <- c(unique(sat_last$year),unique(sat_this$year))
   } else{
-    sat <- data_grp_bar('Q2.4', stacked_labels=TRUE,comp=T)
+    sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=T)
     sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
     sat$year <- this_year
     sat$hjust_var <- ifelse(sat$Percent<=4,-4.4,.5)
     years <- unique(sat$year)
     
   }
+  #match previous categories to current categories
+  sat$Value <- ifelse(sat$Value=='Average value', 'Fair value', sat$Value)
+  sat$Value <- as.factor(sat$Value)
   
-  sat$Value <- as.factor(sat$Q2.4)
   sat$label_col <- ifelse(sat$Value %in% c("Poor value",'Terrible value'),"white","black")
   
   #adust label color if it is off the side to be black
@@ -530,16 +600,17 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   
   
-  sat$Value <- factor(sat$Value, levels <- c( "Excellent value", "Good value","Average value", "Poor value", 
+  sat$Value <- factor(sat$Value, levels <- c( "Excellent value", "Good value","Fair value", "Poor value", 
                                               "Terrible value"))
   
   
   sat$year <- factor(sat$year,levels=years)
-  plot8a <- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
+  plot6a <- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
     geom_bar(stat="identity",width=.5)+ 
-    geom_text_repel(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
+    #replace with geom_text_repel
+    geom_text(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
     scale_x_discrete(position = "top")  + 
-    scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Average","Poor","Terrible"))) +
+    scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Fair","Poor","Terrible"))) +
     scale_color_manual(values=c("black","white"))+
     theme_minimal() + ylab("") + xlab("") + 
     theme(panel.grid = element_blank(),
@@ -550,17 +621,15 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
           legend.text = element_text(size = 13),
           legend.margin=margin(t = 0, unit='cm')) + guides(color="none")
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8a.png"),plot=plot8a,width = 5, height=4.5,units="in")
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide6a.png"),plot=plot6a,width = 5, height=4.5,units="in")
   
   
-  ####### Slide 7 meaning of value . Right
-  # just students
-  
-  
-  meaning <- data_grp_bar('Q62',comp=T)
+  #UPDATED
+  ################## Slide 6b Meaning of Value, region/nation
+  meaning <- data_grp_bar('Q9',comp=T)
   
   #clean up the text answers
-  meaning$Value <- gsub('Value to me is about ', '', meaning$Q62)
+  meaning$Value <- gsub('Value to me is about ', '', meaning$Q9)
   meaning$Value <- paste0(toupper(substr(meaning$Value, 1, 1)), substr(meaning$Value, 2, nchar(meaning$Value)))
   
   meaning$Value <- factor(meaning$Value,
@@ -580,7 +649,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   meaning$Value <- factor(meaning$Value,levels=rev(orderdf$Value))
   meaning$Location <- factor(meaning$Location,levels=c("Nation","Region",UNIVERSITY_NAME))
-  plot8b<- ggplot(meaning,aes(x=Value,y=Percent,fill=Location,label=label)) + 
+  plot6b<- ggplot(meaning,aes(x=Value,y=Percent,fill=Location,label=label)) + 
     geom_bar(stat="identity",position="dodge")+ 
     geom_text(aes(x=Value,y=Percent + max(meaning$Percent)/15,label=label),size = 4, position = position_dodge(width = .9)) +
     coord_flip() + 
@@ -595,14 +664,235 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
           legend.margin=margin(l=-1.8, t = 0,r=1, unit='cm'))  + 
     guides(fill = guide_legend(reverse = TRUE)) 
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8b.png"),plot=plot8b,width = 5, height=4.5,units="in")
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide6b.png"),plot=plot6b,width = 5, height=4.5,units="in")
   
   
+  
+  #UPDATED
+  ################# Slide 7 - Individual performance metrics
+
+  questions = c("Q10_1", "Q10_2", "Q10_3", "Q10_4", "Q10_5", "Q10_6", 
+               "Q10_7", "Q10_9", "Q10_10", "Q10_11", "Q11_1", "Q11_2", "Q11_3", 
+               "Q11_4", "Q11_5", "Q11_6", "Q11_7", "Q11_8", "Q11_9")
+  q_names = c(" Food quality", " Food variety", " Availability of nutrition information", 
+             " Availability of ingredient/allergen information", " Availability of healthy options", 
+             " Price/Value", " Availability of special dietary options", 
+             " Freshness of food", " Affordability", " Made from sustainably sourced products", 
+             " Convenience", " Welcoming/Friendly staff", " Knowledgeable/Helpful staff", 
+             " Speed of service", " Cleanliness", " Hours of operation", " Place to socialize", 
+             " Comfortable dining experience", " Technology to support dining program")
+  
+  vals <- c()
+  for (q in questions){
+    vals = c(vals,top_two(q,data_school_c))
+  }
+  
+  data_7 <- data.frame(cbind(q_names, vals))
+  data_7$vals <- as.numeric(data_7$vals)
+  data_7 <- data_7 %>% arrange(desc(vals))
+  data_7$pct <- paste0(as.character(data_7$vals), '%')
+  
+  
+  data_7$q_names <- unlist(lapply(data_7$q_names,FUN=function(x){paste(strwrap(x,45),collapse="\n")}))
+  
+
+  levels <-  data_7$q_names
+  
+  data_7$q_names<- factor(data_7$q_names, levels = rev(levels))
+  
+  
+  
+  
+  plot7<-
+    ggplot(data_7,aes(x=q_names,y=vals,label=pct),fill=three_tone[2]) + 
+    geom_bar(stat="identity",position="dodge",fill=two_tone[1])+ 
+    geom_text(aes(x=q_names,y=vals + max(data_7$vals)/15,label=pct),size = 3, position = position_dodge(width = .9)) +
+    coord_flip() + 
+    scale_fill_manual(values=three_tone[2]) +
+    #scale_fill_manual(breaks = c("Region","Nation",UNIVERSITY_NAME),values=rev(three_tone),labels=c("   Region   ","   Nation  ",paste(" ",UNIVERSITY_NAME,"  "))) +
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(data_7$vals)+8), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          axis.line.y =  element_line(color = "grey"),
+          axis.text.x = element_blank(), legend.title = element_blank(),
+          # legend.position = "bottom", 
+          legend.position=c(0.3,-0.03),
+          legend.margin=margin(t = 0, unit='cm'))  + 
+    guides(fill = "none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide7.png"),plot=plot7,width = 6, height=4.5,units="in")
+  
+  #UPDATED
+  ####### Slide 8a Current Enrollment Status
+  data_8a <- data_grp_bar('Q15',comp=T)
+  data_8a$Value <- as.factor(data_8a$Q15)
+  data_8a$Value <- unlist(lapply(data_8a$Value,FUN=function(x){paste(strwrap(x,35),collapse="\n")}))
+  
+  
+  orderdf <- data_8a %>% subset(Location==UNIVERSITY_NAME) %>% 
+    arrange(desc(Percent)) %>% 
+    select(Value)
+  
+  
+  data_8a$Value <- factor(data_8a$Value,levels=rev(orderdf$Value))
+  data_8a$Location<- factor(data_8a$Location,levels=c("Nation","Region",UNIVERSITY_NAME))
+  
+  plot8a<- ggplot(data_8a,aes(x=Value,y=Percent,fill=Location,label=label)) + 
+    geom_bar(stat="identity",position="dodge")+ 
+    geom_text(aes(x=Value,y=Percent + max(data_8a$Percent)/10,label=label),size = 3, position = position_dodge(width = .9)) +
+    coord_flip() + 
+    scale_fill_manual(breaks = c("Nation","Region",UNIVERSITY_NAME),values=rev(three_tone),
+                      labels=c(" Nation  ","  Region   ",paste(" ",UNIVERSITY_NAME_SHORT,"  "))) +
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(data_8a$Percent)+15), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          axis.line.y =  element_line(color = "grey"),
+          axis.text.x = element_blank(), legend.title = element_blank(),
+          #legend.position = "bottom", 
+          panel.border = element_blank(),
+          plot.background = element_rect(fill = "#f2f2f2",linetype=0),
+          panel.background = element_rect(fill = "#f2f2f2",linetype=0),
+          legend.position=c(0.05,-.06),
+          legend.margin=margin(t = .1,b=.25, r=1, unit='cm'),
+          legend.key.size = unit(.4, 'cm'),
+          legend.key.height = unit(.4, 'cm'),
+          legend.text = element_text( size = 7.5))  + 
+    guides(fill = guide_legend(reverse = TRUE,ncol=3))
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8a.png"),plot=plot8a,width = 4, height=2.5,units="in")
+  
+  #UPDATED
+  
+  ####### Slide 8b- Meal Plan purchasing intentions
+  # both the enrollment question (used in the data_grp_bar function)
+  #and the likelyhood of purchasing question 
+  #have changed (4.2 in previous year, 17 today)
+  
+  if (!is_ca){
+    if ( HAS_LAST){
+      sat <- data_grp_bar('Q17', stacked_labels = TRUE,filter_enr=T)
+      sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
+      sat_this$year <- this_year
+      sat_this$Value <- sat_this$Q17
+      sat_last <- data_grp_bar('Q4.2', stacked_labels=TRUE,uselast = T) %>% filter(!Location%in%c("Region", "Nation"))
+      sat_last$year <- last_year
+      sat_last$Value <- sat_last$Q4.2
+      sat <- bind_rows(sat_this,sat_last)
+      sat$hjust_var <- ifelse(sat$Percent<=4,-1.6,.5)
+      years <- c(unique(sat_last$year),unique(sat_this$year))
+      
+    } else {
+      sat <- data_grp_bar('Q4.2', stacked_labels=TRUE,comp=T)
+      sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
+      sat$year <- this_year
+      sat$hjust_var <- ifelse(sat$Percent<=4,-2.6,.5)
+      years <- unique(sat$year)
+      
+    }        
+    
+    plan <- sat
+    plan$Value <- as.factor(plan$Value)
+    plan$Value <- unlist(lapply(plan$Value,FUN=function(x){paste(strwrap(x,35),collapse="\n")}))
+    
+    plan$label_col <- ifelse(plan$Value %in% c("Definitely will buy" , "Probably will buy"),"black","white")
+    
+    #adust label color if it is off the side to be black
+    plan$label_col <- ifelse(plan$Percent<=4,'black', plan$label_col)
+    
+    
+    plan$Value <- factor(plan$Value, levels <- c( "Definitely will buy" , "Probably will buy",    "Might or might not buy" ,      
+                                                  "Probably will not buy" ,"Definitely will not buy"  ))
+    plan$year <- factor(plan$year,levels=years)
+    plot8b <- ggplot(plan,aes(x=year,y=Percent,fill=Value,label=label)) + 
+      geom_bar(stat="identity",width=.5)+ 
+      #replace with geom_text_repel
+      geom_text(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = 0.5)) +
+      scale_x_discrete(position = "top")  + 
+      scale_fill_manual(values=colors,labels=paste("   ",c("Definitely","Probably","Maybe","Probably Not","Definitely Not"))) +
+      scale_color_manual(values=c("black","white"))+
+      theme_minimal() + ylab("") + xlab("") + 
+      theme(panel.grid = element_blank(),
+            axis.text.y = element_blank(), legend.title = element_blank(),
+            #legend.position = "left", 
+            panel.background = element_rect(fill = "transparent",colour = NA),
+            plot.background = element_rect(fill = "transparent",colour = NA),
+            panel.spacing = unit(2, "cm"),
+            plot.margin=unit(c(0,0,0,1.5),"cm"),
+            legend.position=c(-0.01,0.5),
+            legend.margin=margin(t = 0,l=0, r=1, unit='cm')) + guides(color=F)
+    
+    
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8b.png"),plot=plot8b,width = 5.5, height=4.5,units="in",bg="transparent")
+    
+  }
+  
+  ####### Slide 8c motivators to purchase
+  
+  if (is_ca==F){
+    base_data <- data_school_c%>% filter(Q4 %in% c("Yes")) %>% filter(Q19!="Graduating")
+  } else {
+    base_data <- data_school_c%>% filter(Q4ca %in% c("Yes")) %>% filter(Q19!="Graduating")
+  }
+  
+  if(!is_ca){
+    base <- nrow(base_data) 
+    
+    res_s <- base_data %>%
+      select(dplyr::starts_with("Q20")) %>% select(!dplyr::contains("Q20_9_TEXT")) %>%
+      mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q20")) %>%
+      filter(value!="") %>%
+      mutate(value= gsub(" \\(please specify)","",value)) %>% 
+      #mutate(value = gsub("meal plan","dining plan",value)) %>% 
+      #mutate(value = gsub("Meal plan","Dining plan",value)) %>% 
+      group_by(value) %>% summarize(n=100*n()/base)  %>% arrange(desc(n))
+    
+    
+    res_all <- data %>% 
+      select(dplyr::starts_with("Q20")) %>% select(!dplyr::contains("Q20_9_TEXT")) %>%
+      mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q20")) %>%
+      filter(value!="") %>%
+      mutate(value= gsub(" \\(please specify)","",value)) %>% 
+      #mutate(value = gsub("meal plan","dining plan",value)) %>% 
+      # mutate(value = gsub("Meal plan","Dining plan",value)) %>% 
+      group_by(value) %>% summarize(n_nat=100*n()/base)
+    
+    res <- merge(res_s,res_all,by="value",all=T)
+    res$Percent <- ifelse(is.na(res$n),0,res$n)
+    
+    
+    res$value <- unlist(lapply(res$value,FUN=function(x){paste(strwrap(x,45),collapse="\n")}))
+    
+    
+    res$label<- paste0(roundQual(res$n,0),"%")
+    
+    res <- res %>% arrange(desc(n)) %>% arrange(value=="Other:")%>% arrange(value=="None of these")
+    levels <-  res$value
+    
+    res$value <- factor(res$value, levels = rev(levels))
+    
+    plotMotiv<-
+      ggplot(res,aes(x=value,y=n,label=label)) + 
+      geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
+      geom_text(aes(x=value,y=n + max(res$n)/12,label=label),size = 3, position = position_dodge(width = .9)) +
+      coord_flip() + 
+      theme_minimal() + ylab("") + xlab("") +
+      scale_y_continuous(limits = c(0,max(res$n+max(res$n)/12+10)), expand=c(0,0)) +
+      theme(panel.grid = element_blank(),
+            axis.line.y =  element_line(color = "grey"),
+            axis.text.x = element_blank(), legend.title = element_blank(),
+            # legend.position = "bottom", 
+            legend.position=c(0.4,-0.03),
+            legend.margin=margin(t = 0, unit='cm')) 
+    
+    
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8c.png"),plot=plotMotiv,width = 6, height=5,units="in")
+  }
+  
+ 
   
   ################### Replace dot charts with these satisfaction charts, for now just did the first one
   
-  sat <- data_grp_bar('Q2.1', appendix=TRUE, stacked_labels=TRUE,comp=T)
-  sat$Value <- as.factor(sat$Q2.1)
+  sat <- data_grp_bar('Q5', appendix=TRUE, stacked_labels=TRUE,comp=T)
+  sat$Value <- as.factor(sat$Q5)
   sat$label_col <- ifelse(sat$Value %in% c("Excellent","Good"),"black","white")
   sat$hjust_var <- ifelse(sat$Percent<=4,-1.6,.5)
   #adust label color if it is off the side to be black
@@ -616,7 +906,8 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   plot10 <- ggplot(sat,aes(x=Location,y=Percent,fill=Value,label=label)) + 
     geom_bar(stat="identity",width=.5)+ 
-    geom_text_repel(aes(x=Location,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,
+    #REplace repel ( geom_text_repel)
+    geom_text(aes(x=Location,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,
               size = 4, position = position_stack(vjust = 0.5),segment.alpha=0,segment.color= "white") +
     scale_x_discrete(position = "top")  + 
     scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Average","Poor","Terrible"))) +
@@ -918,106 +1209,15 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   
   
   
-  ####### Slide 13a - Meal Plan purchasing
-  # as of 2023, 1.8.1 has changed back to 1.8 for us adn 1.8ca for canada
-  if (!is_ca){
-  if ( HAS_LAST){
-    sat <- data_grp_bar('Q4.2', stacked_labels = TRUE,filter_enr=T)
-    sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
-    sat_this$year <- this_year
-    sat_last <- data_grp_bar('Q4.2', stacked_labels=TRUE,uselast = T) %>% filter(!Location%in%c("Region", "Nation"))
-    sat_last$year <- last_year
-    sat <- bind_rows(sat_this,sat_last)
-    sat$hjust_var <- ifelse(sat$Percent<=4,-1.6,.5)
-    years <- c(unique(sat_last$year),unique(sat_this$year))
- 
-  } else {
-    sat <- data_grp_bar('Q4.2', stacked_labels=TRUE,comp=T)
-    sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
-    sat$year <- this_year
-    sat$hjust_var <- ifelse(sat$Percent<=4,-2.6,.5)
-    years <- unique(sat$year)
- 
-  }        
-
-  plan <- sat
-  plan$Value <- as.factor(plan$Q4.2)
-  plan$Value <- unlist(lapply(plan$Value,FUN=function(x){paste(strwrap(x,35),collapse="\n")}))
   
-  plan$label_col <- ifelse(plan$Value %in% c("Definitely will buy" , "Probably will buy"),"black","white")
- 
-  #adust label color if it is off the side to be black
-  plan$label_col <- ifelse(plan$Percent<=4,'black', plan$label_col)
-  
-  
-  plan$Value <- factor(plan$Value, levels <- c( "Definitely will buy" , "Probably will buy",    "Might or might not buy" ,      
-                                                "Probably will not buy" ,"Definitely will not buy"  ))
-  plan$year <- factor(plan$year,levels=years)
-  plot13a <- ggplot(plan,aes(x=year,y=Percent,fill=Value,label=label)) + 
-    geom_bar(stat="identity",width=.5)+ 
-    geom_text_repel(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = 0.5)) +
-    scale_x_discrete(position = "top")  + 
-    scale_fill_manual(values=colors,labels=paste("   ",c("Definitely","Probably","Maybe","Probably Not","Definitely Not"))) +
-    scale_color_manual(values=c("black","white"))+
-    theme_minimal() + ylab("") + xlab("") + 
-    theme(panel.grid = element_blank(),
-          axis.text.y = element_blank(), legend.title = element_blank(),
-          #legend.position = "left", 
-          panel.background = element_rect(fill = "transparent",colour = NA),
-          plot.background = element_rect(fill = "transparent",colour = NA),
-          panel.spacing = unit(2, "cm"),
-          plot.margin=unit(c(0,0,0,1.5),"cm"),
-          legend.position=c(-0.01,0.5),
-          legend.margin=margin(t = 0,l=0, r=1, unit='cm')) + guides(color=F)
-  
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide13a.png"),plot=plot13a,width = 5.5, height=4.5,units="in",bg="transparent")
-  
-  }
-  ####### Slide 13b Purchasing requirements
-  data_13b <- data_grp_bar('Q4.1',comp=T)
-  data_13b$Value <- as.factor(data_13b$Q4.1)
-  data_13b$Value <- unlist(lapply(data_13b$Value,FUN=function(x){paste(strwrap(x,35),collapse="\n")}))
-
-  
-  orderdf <- data_13b %>% subset(Location==UNIVERSITY_NAME) %>% 
-    arrange(desc(Percent)) %>% 
-     select(Value)
-
-  
-  data_13b$Value <- factor(data_13b$Value,levels=rev(orderdf$Value))
-  data_13b$Location<- factor(data_13b$Location,levels=c("Nation","Region",UNIVERSITY_NAME))
-  
-  plot13b<- ggplot(data_13b,aes(x=Value,y=Percent,fill=Location,label=label)) + 
-    geom_bar(stat="identity",position="dodge")+ 
-    geom_text(aes(x=Value,y=Percent + max(data_13b$Percent)/10,label=label),size = 3, position = position_dodge(width = .9)) +
-    coord_flip() + 
-    scale_fill_manual(breaks = c("Nation","Region",UNIVERSITY_NAME),values=rev(three_tone),
-                      labels=c(" Nation  ","  Region   ",paste(" ",UNIVERSITY_NAME_SHORT,"  "))) +
-    theme_minimal() + ylab("") + xlab("") +
-    scale_y_continuous(limits = c(0,max(data_13b$Percent)+15), expand=c(0,0)) +
-    theme(panel.grid = element_blank(),
-          axis.line.y =  element_line(color = "grey"),
-          axis.text.x = element_blank(), legend.title = element_blank(),
-          #legend.position = "bottom", 
-          panel.border = element_blank(),
-          plot.background = element_rect(fill = "#f2f2f2",linetype=0),
-          panel.background = element_rect(fill = "#f2f2f2",linetype=0),
-          legend.position=c(0.05,-.06),
-          legend.margin=margin(t = .1,b=.25, r=1, unit='cm'),
-          legend.key.size = unit(.4, 'cm'),
-          legend.key.height = unit(.4, 'cm'),
-          legend.text = element_text( size = 7.5))  + 
-    guides(fill = guide_legend(reverse = TRUE,ncol=3))
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide13b.png"),plot=plot13b,width = 4, height=2.5,units="in")
-  
+    
 
   ####### Slide 14 barriers to participation
   if (!is_ca){
-  base <- sum(data_school_c$Q4.2 %in% c("Probably will not buy", "Might or might not buy",  
+  base <- sum(data_school_c$Q17 %in% c("Probably will not buy", "Might or might not buy",  
                                         "Definitely will not buy"),na.rm=T)
   
-  data_14  <- data_school_c %>% filter(Q4.2 %in%c("Probably will not buy", "Might or might not buy",  
+  data_14  <- data_school_c %>% filter(Q17 %in%c("Probably will not buy", "Might or might not buy",  
                                              "Definitely will not buy"))%>% 
     rename(value=Q67) %>% select(value) %>%
     filter(value!="") %>% 
@@ -1072,68 +1272,7 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide14.png"),plot=plot14,width = 6, height=4.5,units="in")
   
   }
-  ####### Slide 15 motivators
-  
-  if (is_ca==F){
-    base_data <- data_school_c%>% filter(Q1.8 %in% c("Yes")) %>% filter(Q67!="Graduating")
-  } else {
-    base_data <- data_school_c%>% filter(Q1.8ca %in% c("Yes")) %>% filter(Q67!="Graduating")
-  }
-  
-  if(!is_ca){
-  base <- nrow(base_data) 
-  
-  res_s <- base_data %>%
-    select(dplyr::starts_with("Q68")) %>% select(!dplyr::contains("Q68_9_TEXT")) %>%
-    select(!dplyr::contains("Q68_SDS")) %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q68")) %>%
-    filter(value!="") %>%
-    mutate(value= gsub(" \\(please specify)","",value)) %>% 
-    #mutate(value = gsub("meal plan","dining plan",value)) %>% 
-    #mutate(value = gsub("Meal plan","Dining plan",value)) %>% 
-    group_by(value) %>% summarize(n=100*n()/base)  %>% arrange(desc(n))
-  
-  res_all <- data %>% 
-    select(dplyr::starts_with("Q68")) %>% select(!dplyr::contains("Q68_9_TEXT")) %>%
-    select(!dplyr::contains("Q68_SDS")) %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q68")) %>%
-    filter(value!="") %>%
-    mutate(value= gsub(" \\(please specify)","",value)) %>% 
-    #mutate(value = gsub("meal plan","dining plan",value)) %>% 
-   # mutate(value = gsub("Meal plan","Dining plan",value)) %>% 
-    group_by(value) %>% summarize(n_nat=100*n()/base)
-  
- res <- merge(res_s,res_all,by="value",all=T)
- res$Percent <- ifelse(is.na(res$n),0,res$n)
-  
-  
-  res$value <- unlist(lapply(res$value,FUN=function(x){paste(strwrap(x,45),collapse="\n")}))
 
-  
-  res$label<- paste0(roundQual(res$n,0),"%")
-  
-  res <- res %>% arrange(desc(n)) %>% arrange(value=="Other")%>% arrange(value=="None of these")
-  levels <-  res$value
-  
-  res$value <- factor(res$value, levels = rev(levels))
-  
-  plotMotiv<-
-    ggplot(res,aes(x=value,y=n,label=label)) + 
-    geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
-    geom_text(aes(x=value,y=n + max(res$n)/12,label=label),size = 3, position = position_dodge(width = .9)) +
-    coord_flip() + 
-    theme_minimal() + ylab("") + xlab("") +
-    scale_y_continuous(limits = c(0,max(res$n+max(res$n)/12+10)), expand=c(0,0)) +
-    theme(panel.grid = element_blank(),
-          axis.line.y =  element_line(color = "grey"),
-          axis.text.x = element_blank(), legend.title = element_blank(),
-          # legend.position = "bottom", 
-          legend.position=c(0.4,-0.03),
-          legend.margin=margin(t = 0, unit='cm')) 
-  
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","plotMotiv.png"),plot=plotMotiv,width = 6, height=5,units="in")
-  }
   
   ###################### new slide 17 
   # those who want to use off campus
