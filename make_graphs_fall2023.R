@@ -13,10 +13,6 @@ library(htmlwidgets)
 #install.packages("webshot")
 #webshot::install_phantomjs()
 
-#setwd("~/Consulting/Qualtrics/Aramark2022/Fall 2022")
-#setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark_Spring_2023/AramarkFall2022")
-
-
 
 
 #colors <- c("#750015","#595959","#ff91a3","#bfbfbf","#c00000")
@@ -37,8 +33,11 @@ roundQual <- function(x,n){floor(x+.5)}
 last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
 #last_path <- '/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark_Spring_2023/AramarkFall2022/data_files'
 ### 
-last_data <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
+last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
 last_data <- last_data[3:nrow(last_data),]
+
+last_data_fall_22 <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
+last_data_fall_22 <- last_data_fall_22[3:nrow(last_data_fall_22),]
 
 last_data_spring_22 <- read.csv(paste0(last_path,'/Spring_2022_v4.csv'),stringsAsFactors=FALSE)
 last_data_spring_22 <- last_data_spring_22[3:nrow(last_data_spring_22),]
@@ -64,16 +63,11 @@ last_data21$SCHOOL_NAME <- ifelse(last_data21$SCHOOL_NAME =="Simmons College","S
 last_data_spring21 <- read.csv(paste0(last_path,'/spring2021.csv'),stringsAsFactors=FALSE)
 last_data_spring21 <- last_data_spring21[3:nrow(last_data_spring21),]
 
-## and fall 2020
-last_data_fall20 <- read.csv(paste0(last_path,'/fall2020_V2.csv'),stringsAsFactors=FALSE)
-last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
-
-
-data<- read.csv("spring2023_final.csv",stringsAsFactors=FALSE)
+data<- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
 # merge in names
-outlets <- read.csv("Spring2023_outlets.csv")
+outlets <- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Spring2023_outlets.csv")
 
 
 # NOTE THIS ONLY WORKS for all USA 
@@ -97,7 +91,11 @@ data_us <- data[data$COUNTRY=="USA",]
 all_reps <- data_us %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
 all_reps$last_year <- ""
 
-all_reps_fall2022 <- last_data %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
+all_reps_spring2023 <- last_data %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
+all_reps$last_year <- ifelse(all_reps$SCHOOL_NAME %in% all_reps_spring2023$SCHOOL_NAME,"Spring 2023",all_reps$last_year)
+
+
+all_reps_fall2022 <- last_data_fall_22 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
 all_reps$last_year <- ifelse(all_reps$SCHOOL_NAME %in% all_reps_fall2022$SCHOOL_NAME,"Fall 2022",all_reps$last_year)
 
 all_reps_spring2022 <- last_data_spring_22 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
@@ -111,17 +109,13 @@ all_reps_spring2021 <- last_data_spring21 %>% group_by(SCHOOL_NAME) %>% summariz
 all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %in% all_reps_spring2021$SCHOOL_NAME),"Spring 2021",all_reps$last_year)
 
 
-all_reps_fall2020<- last_data_fall20 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
-all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %in% all_reps_fall2020$SCHOOL_NAME),"Fall 2020",all_reps$last_year)
-
-
-
 #for working
-UNIVERSITY_NAME <-  "University of Virginia"
+UNIVERSITY_NAME <-  "James Madison University"
 data_last <- last_data
-last_year ="Fall 2022"
+last_year ="Spring 2023"
 
-
+## Fix names 
+data$SCHOOL_NAME <- ifelse(data$Q0=="USA",data$Q1_USA, data$Q1_CAN)
 
 get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_leg=-.5,slide32_leg = .19,last_year ="Fall 2022", is_ca=F,is_harvest=F){
 
@@ -132,27 +126,30 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   UNIVERSITY_NAME_MED <- ifelse(nchar(UNIVERSITY_NAME) >= 30, paste(strwrap(UNIVERSITY_NAME,30),collapse = "\n  "), UNIVERSITY_NAME)
   
   # set up years
-  this_year <- "Spring 2023"
+  this_year <- "Fall 2023"
   
   # make directory for graphs_spring_2023/
-  loc <- "graphs_spring_2023/"
+  loc <- "graphs_fall_2023/"
   dir.create(paste0(loc,UNIVERSITY_NAME))
   
   # make student only data set 
   data_c <- data 
-  data <- data %>% filter(grepl("student|Other",Q1.1))
+
+  data <- data %>% filter(grepl("student|Other",Q2))
+
+  
   
   # do same for last year 
   data_c_last <- data_last 
-  data_last <- data_last %>% filter(grepl("student|Other",Q1.1))
+  data_last <- data_last %>% filter(grepl("student|Other",Q1.1)) # note mismatch of question numbers in older data
   
   
   
-  data_school_c <- data_c %>% filter(SCHOOL_USA== UNIVERSITY_NAME)
-  data_school <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) 
+  data_school_c <- data_c %>% filter(SCHOOL_NAME== UNIVERSITY_NAME)
+  data_school <- data %>% filter(SCHOOL_NAME== UNIVERSITY_NAME) 
   
-  data_school_c_last <- data_c_last %>% filter(SCHOOL_USA== UNIVERSITY_NAME)
-  data_school_last <- data_last %>% filter(SCHOOL_USA== UNIVERSITY_NAME) 
+  data_school_c_last <- data_c_last %>% filter(SCHOOL_NAME== UNIVERSITY_NAME)
+  data_school_last <- data_last %>% filter(SCHOOL_NAME== UNIVERSITY_NAME) 
   
   if (nrow(data_school_c_last)>50) {
     HAS_LAST = TRUE
@@ -162,16 +159,16 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   
   #get region
-  region <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
+  region <- data %>% filter(SCHOOL_NAME== UNIVERSITY_NAME) %>% 
     select(REGION_NAME) %>% slice(1)
   REGION <- region[[1]]
 
   data_region_c <- data_c[data_c$REGION_NAME==REGION,]
-  data_region <- data_region_c %>% filter(grepl("student|Other",Q1.1))
+  data_region <- data_region_c %>% filter(grepl("student|Other",Q2))
   
   #last time east region was just EAST
   if (REGION == 'East Region'){
-    data_region_c_last <- filter(data_c_last, REGION_NAME=="East")
+    data_region_c_last <- filter(data_c_last, REGION_NAME%in%c("East","East Region")) # in some years east, some east region
     data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
   } else{
     
@@ -181,11 +178,11 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   }
 
   #get market segment
-  market_seg <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
+  market_seg <- data %>% filter(SCHOOL_NAME== UNIVERSITY_NAME) %>% 
     select(MARKET_SEGMENT) %>% slice(1)
   MARKET_SEG <- market_seg[[1]]
   data_market_c <- filter(data_c, MARKET_SEGMENT==MARKET_SEG)
-  data_market <- data_market_c %>% filter(grepl("student|Other",Q1.1))
+  data_market <- data_market_c %>% filter(grepl("student|Other",Q2))
   
   
   
@@ -418,6 +415,88 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
     return (grouped)
     
   }
+  
+  ############ NEW GRAPHS 
+  
+  ################## Slide 1 ##############
+  
+  year<- data_grp_bar('Q2',comp=T)
+  year <-year %>% filter(Location==UNIVERSITY_NAME)
+  year$Q2 <- gsub(" (please specify)","",year$Q2,fixed=T)
+  year$Q2 <- gsub("year student","Year",year$Q2)
+  year$Q2 <- gsub("Graduate student","Graduate Student",year$Q2)
+  year$Q2 <- gsub("Other:","Other",year$Q2)
+  year$Value <- factor(year$Q2)
+  
+  levels <-  c("1st Year",
+               "2nd Year",
+               "3rd Year",
+               "4th Year",
+               "5th Year",
+               "International student",
+               "Employee",
+               "Faculty",
+               "Graduate Student","Staff",
+               "Other")
+  # levels(year$Value) <-levels
+  
+  year$Value <- factor(year$Value, levels = rev(levels))
+  
+  plot21b<-
+    ggplot(year,aes(x=Value,y=Percent,label=label)) + 
+    geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
+    geom_text(aes(x=Value,y=Percent + max(year$Percent)/7,label=label),size = 4, position = position_dodge(width = .9)) +
+    coord_flip() + 
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(year$Percent)+max(year$Percent)/7+10), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          axis.line.y =  element_line(color = "grey"),
+          axis.text.x = element_blank(), legend.title = element_blank(),
+          # legend.position = "bottom", 
+          legend.position=c(0.4,-0.03),
+          legend.margin=margin(t = 0, unit='cm')) 
+  
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","location_1a.png"),plot=plot21b,width = 4, height=4,units="in")
+  
+  # graph 2 - location pie chart
+  g2 <- data_school %>% group_by(Q3) %>% summarize(count=n())
+  
+  # Compute percentages
+  g2$fraction <- g2$count / sum(g2$count)
+  
+  # Compute the cumulative percentages (top of each rectangle)
+  g2$ymax <- cumsum(g2$fraction)
+  
+  # Compute the bottom of each rectangle
+  g2$ymin <- c(0, head(g2$ymax, n=-1))
+  
+  # Compute label position
+  g2$labelPosition <- (g2$ymax + g2$ymin) / 2
+  
+  # Compute a good label
+  g2$label <- paste0(round(g2$count*100/sum(g2$count)))
+  
+  # Make the plot
+  pie <- ggplot(g2, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Q3)) +
+    geom_rect() +
+    geom_label( x=3.5, aes(y=labelPosition, label=label), size=6) +
+    scale_fill_manual(values=three_tone)+
+    coord_polar(theta="y") +
+    xlim(c(2, 4)) +
+    theme_void() +
+    theme(legend.position = "none")
+  
+  ################## Slide 2 ##############
+  
+  ##################
+  
+} 
+
+
+
+
+get_graphs_old <- function(){
   
   ####### Slide  OVERALL EXPERIENCE SLide 6 
   ## These are just students
@@ -3225,6 +3304,25 @@ Food Ordered") ~ px(150)
   
 }
 
+
+####################################################
+##################### Fall 2023 ####################
+####################################################
+colors <- c("#FFC72C","#9ACAEB","#999999","black","#EA002A")
+colors_stacked <- rev(c("#FFC72C","#9ACAEB","#999999","black","#EA002A"))
+two_tone <- c("#EA0022","#ff91a3")
+three_tone <- colors[c(5,3,4)]
+three_tone_dot <- c("#EA0022","#7f7f7f","black")
+four_tone <- colors[c(5,3,2,1)]
+tab_col <- c("#faccd4","#f47f94")
+
+setwd("~/Consulting/Qualtrics/Aramark2023/Aramark2023")
+#change is_ca flag to true for canadian schools
+data_ca <- data[data$Q0!="",]
+data_us <- data[data$Q0=="USA",]
+
+get_graphs(data_us,last_data, "James Madison University",last_year="Spring 2023", is_ca=F)
+
 ####################################################
 ##################### Spring 2023 ####################
 ####################################################
@@ -3237,7 +3335,7 @@ four_tone <- colors[c(5,3,2,1)]
 tab_col <- c("#faccd4","#f47f94")
 
 #change is_ca flag to true for canadian schools
-data_ca <- data[data$SCHOOL_CAN!="",]
+data_ca <- data[data$SCHOOL_CAN=="Canada",]
 data_us <- data[data$COUNTRY=="USA",]
 
 # identify harvest
