@@ -14,8 +14,8 @@ library(htmlwidgets)
 #webshot::install_phantomjs()
 
 
-setwd("~/Consulting/Qualtrics/Aramark2022/Fall 2022")
-#setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark2023")
+#setwd("~/Consulting/Qualtrics/Aramark2022/Fall 2022")
+setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark2023")
 
 #colors <- c("#750015","#595959","#ff91a3","#bfbfbf","#c00000")
 #colors <- c("#8C0019","#EA0022","#999999")
@@ -36,9 +36,9 @@ roundQual <- function(x,n){floor(x+.5)}
 last_path <- 'data_files'
 ### 
 
-last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
+#last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
 #TODO: sarah to get file
-#last_data <- read.csv(paste0(last_path,"/spring2023_temp.csv"),stringsAsFactors=FALSE)
+last_data <- read.csv(paste0(last_path,"/spring2023_temp.csv"),stringsAsFactors=FALSE)
 
 last_data <- last_data[3:nrow(last_data),]
 
@@ -73,18 +73,19 @@ last_data_fall20 <- read.csv(paste0(last_path,'/fall2020_V2.csv'),stringsAsFacto
 last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
 
 
-data<- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023.csv",stringsAsFactors=FALSE)
-#data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
+#data<- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023.csv",stringsAsFactors=FALSE)
+data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
 
 # merge in names
 #TODO sarah to get outlest file
-outlets <- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Spring2023_outlets.csv")
-#outlets <- read.csv("Fall2022_outlets.csv")
+#outlets <- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Spring2023_outlets.csv")
+outlets <- read.csv("Fall2022_outlets.csv")
 
-# NOTE THIS ONLY WORKS for all USA 
-data$SCHOOL_USA <- data$SCHOOL_NAME   
+
+## Fix names 
+data$SCHOOL_NAME <- ifelse(data$Q0=="USA",data$Q1_USA, data$Q1_CAN)
 
 data$SCHOOL_NAME <- ifelse(data$SCHOOL_NAME =="Simmons College","Simmons University", data$SCHOOL_NAME)
 data$SCHOOL_USA <- data$SCHOOL_NAME
@@ -124,8 +125,6 @@ data_last <- last_data
 last_year ="Spring 2023"
 
 
-## Fix names 
-data$SCHOOL_NAME <- ifelse(data$Q0=="USA",data$Q1_USA, data$Q1_CAN)
 
 get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_leg=-.5,slide32_leg = .19,last_year ="Spring 2023", is_ca=F,is_harvest=F){
 
@@ -212,6 +211,12 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   
   ############## Data Prep Functions
+  
+  top_two <- function(x,dataset){
+    roundQual(100*sum(grepl("excellent|good|^agree|strongly agree|definitely will buy|probably will buy",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
+  }
+  
+  
   data_grp_bar <- function(col, appendix=FALSE, stacked_labels=FALSE,need_fill=FALSE,
                            comp=F,filter_enr=F,uselast=F,filterV=NULL,filter=NULL){
     if (comp==T){
@@ -240,13 +245,13 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
       
     } else if (filter_enr==T & uselast==T){
       if (is_ca== F){
-        data <- data_c %>% filter(Q1.8=="Yes")
-        data_school <- data_school_c %>% filter(Q1.8=="Yes")
-        data_region <- data_region_c %>% filter(Q1.8=="Yes")
+        data <- data_c %>% filter(Q4=="Yes")
+        data_school <- data_school_c %>% filter(Q4=="Yes")
+        data_region <- data_region_c %>% filter(Q4=="Yes")
       } else {
         data <- data_c %>% filter(Q1.8ca=="Yes")
-        data_school <- data_school_c %>% filter(Q1.8ca=="Yes")
-        data_region <- data_region_c %>% filter(Q1.8ca=="Yes")
+        data_school <- data_school_c %>% filter(Q4ca=="Yes")
+        data_region <- data_region_c %>% filter(Q4ca=="Yes")
       } 
     }
     
@@ -526,82 +531,6 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   ##################
   
-} 
-
-
-
-
-get_graphs_old <- function(){
-  
-  ####### Slide  OVERALL EXPERIENCE SLide 6 
-  ## These are just students
-  
-  top_two <- function(x,dataset){
-    roundQual(100*sum(grepl("excellent|good|^agree|strongly agree|definitely will buy|probably will buy",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
-  }
-
-
-  if (HAS_LAST){
-    sat <- data_grp_bar('Q2.1', stacked_labels=TRUE,comp=T)
-    sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
-    sat_this$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c),"%")
-    sat_this$year <- this_year
-    sat_this$year <- paste0(sat_this$year,sat_this$top2)
-    
-    sat_last <- data_grp_bar('Q2.1', stacked_labels=TRUE,uselast = T) %>% filter(!Location%in%c("Region", "Nation"))
-    sat_last$year <- last_year
-    sat_last$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c_last),"%")
-    sat_last$year <- paste0(sat_last$year,sat_last$top2)
-    
-    sat <- bind_rows(sat_this,sat_last)
-    sat$hjust_var <- ifelse(sat$Percent<=4,-3.6,.5)
-    
-    
-    years <- c(unique(sat_last$year),unique(sat_this$year))
-    
-  } else{
-    sat <- data_grp_bar('Q2.1', stacked_labels=TRUE,comp=T)
-    sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
-    sat$year <- this_year
-    sat$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c),"%")
-    sat$year <- paste0(sat$year,sat$top2)
-    sat$hjust_var <- ifelse(sat$Percent<=4,-6.2,.5) 
-    years <- unique(sat$year)
-  }
-  
-  sat$Value <- as.factor(sat$Q2.1)
-  sat$label_col <- ifelse(sat$Value %in% c("Excellent","Good"),"black","white")
-
-  #adust label color if it is off the side to be black
-  sat$label_col <- ifelse(sat$Percent<=4,'black', sat$label_col)
-  
-  
-  
-  sat$Value <- factor(sat$Value, levels <- c( "Excellent", "Good","Average", "Poor", 
-                                              "Terrible"))
-  
-  
-  sat$year <- factor(sat$year,levels=years)
-  
-  sat_plot<- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
-    geom_bar(stat="identity",width=.5)+ 
-    geom_text_repel(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
-    scale_x_discrete(position = "top")  + 
-    scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Average","Poor","Terrible"))) +
-    scale_color_manual(values=c("black","white"))+
-    theme_minimal() + ylab("") + xlab("") + 
-    theme(panel.grid = element_blank(),
-          axis.text.y = element_blank(), legend.title = element_blank(),
-          axis.text.x=element_text(size=13),
-          legend.text=element_text(size=13),
-          # legend.position = "left", 
-          plot.margin = margin(l=.7, unit="cm"),
-          legend.position=c(0.01,0.5),
-          legend.margin=margin(t = 0, unit='cm')) + guides(color="none")
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideSat.png"),plot=sat_plot,width = 7, height=4.5,units="in")
-  
-  #UPDATED
   ####### Slide 5, Q13 - Satisfaction with specific dining locations
   #Q13_1 to Q13_4
   
@@ -659,9 +588,7 @@ get_graphs_old <- function(){
   
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide5.png"),plot=plot_outlet_sat,width = 10, height=5,units="in",bg = "transparent")
   
-  
 
-  #UPDATED
   ################## Slide 6a Value Rating
   ## These are just students
   if (HAS_LAST){
@@ -719,7 +646,7 @@ get_graphs_old <- function(){
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide6a.png"),plot=plot6a,width = 5, height=4.5,units="in")
   
   
-  #UPDATED
+  
   ################## Slide 6b Meaning of Value, region/nation
   meaning <- data_grp_bar('Q9',comp=T)
   
@@ -763,19 +690,18 @@ get_graphs_old <- function(){
   
   
   
-  #UPDATED
   ################# Slide 7 - Individual performance metrics
-
+  
   questions = c("Q10_1", "Q10_2", "Q10_3", "Q10_4", "Q10_5", "Q10_6", 
-               "Q10_7", "Q10_9", "Q10_10", "Q10_11", "Q11_1", "Q11_2", "Q11_3", 
-               "Q11_4", "Q11_5", "Q11_6", "Q11_7", "Q11_8", "Q11_9")
+                "Q10_7", "Q10_9", "Q10_10", "Q10_11", "Q11_1", "Q11_2", "Q11_3", 
+                "Q11_4", "Q11_5", "Q11_6", "Q11_7", "Q11_8", "Q11_9")
   q_names = c(" Food quality", " Food variety", " Availability of nutrition information", 
-             " Availability of ingredient/allergen information", " Availability of healthy options", 
-             " Price/Value", " Availability of special dietary options", 
-             " Freshness of food", " Affordability", " Made from sustainably sourced products", 
-             " Convenience", " Welcoming/Friendly staff", " Knowledgeable/Helpful staff", 
-             " Speed of service", " Cleanliness", " Hours of operation", " Place to socialize", 
-             " Comfortable dining experience", " Technology to support dining program")
+              " Availability of ingredient/allergen information", " Availability of healthy options", 
+              " Price/Value", " Availability of special dietary options", 
+              " Freshness of food", " Affordability", " Made from sustainably sourced products", 
+              " Convenience", " Welcoming/Friendly staff", " Knowledgeable/Helpful staff", 
+              " Speed of service", " Cleanliness", " Hours of operation", " Place to socialize", 
+              " Comfortable dining experience", " Technology to support dining program")
   
   vals <- c()
   for (q in questions){
@@ -790,7 +716,7 @@ get_graphs_old <- function(){
   
   data_7$q_names <- unlist(lapply(data_7$q_names,FUN=function(x){paste(strwrap(x,45),collapse="\n")}))
   
-
+  
   levels <-  data_7$q_names
   
   data_7$q_names<- factor(data_7$q_names, levels = rev(levels))
@@ -817,7 +743,7 @@ get_graphs_old <- function(){
   
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide7.png"),plot=plot7,width = 6, height=4.5,units="in")
   
-  #UPDATED
+
   ####### Slide 8a Current Enrollment Status
   data_8a <- data_grp_bar('Q15',comp=T)
   data_8a$Value <- as.factor(data_8a$Q15)
@@ -855,8 +781,7 @@ get_graphs_old <- function(){
     guides(fill = guide_legend(reverse = TRUE,ncol=3))
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8a.png"),plot=plot8a,width = 4, height=2.5,units="in")
   
-  #UPDATED
-  
+
   ####### Slide 8b- Meal Plan purchasing intentions
   # both the enrollment question (used in the data_grp_bar function)
   #and the likelyhood of purchasing question 
@@ -982,7 +907,482 @@ get_graphs_old <- function(){
     ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide8c.png"),plot=plotMotiv,width = 6, height=5,units="in")
   }
   
+  
+
+  #Slide 9a
+  ## this is for all repsondents 
+  
+  eligible = c('Milk', 'Eggs', 'Peanuts', 'Tree nuts', 'Fish', 'Shellfish', 'Soy', 
+               'Wheat/Gluten', 'Sesame',  'Other (please specify):')
+  if (is_ca){
+    eligible = c(eligible, 'Mustard')
+  }
+  
+  
+  res <- data_school_c %>% filter(Q23_1=="Food allergies or intolerances")%>% 
+    select(dplyr::starts_with("Q24")) %>% select(!dplyr::contains("Q24_11_TEXT")) %>%
+    #select(!dplyr::contains("Q70_SDS")) %>%
+    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q24")) %>%
+    filter(value!="") %>%
+    group_by(value) %>% summarize(n=100*n()/nrow(data_school_c))  %>% arrange(desc(n)) %>% 
+    filter(value!='None of the above') %>% 
+    filter(value %in% eligible) %>%
+    arrange(value %in% c("Other (please specify):"))
+  
+  res$value <- gsub(" \\(please specify\\):","",res$value)
+  
+  res$label<- paste0(roundQual(res$n,0),"%")
+  
+  
+  levels <-  res$value
+  
+  res$value <- factor(res$value, levels = levels)
+  res$Percent <- res$n
+  
+  plot9a<- ggplot(res,aes(x=value,y=Percent,label=label)) + 
+    geom_bar(stat="identity",position="dodge",fill=two_tone[1],width=.5)+ 
+    geom_text(aes(x=value,y=Percent + max(Percent)/10,label=label),size = 6, position = position_dodge(width = .9)) +
+    #scale_fill_manual(breaks = rev(c("Region","Nation",UNIVERSITY_NAME)),values=three_tone,labels=rev(c("  Region  ","   Nation  ",paste(" ",UNIVERSITY_NAME,"  ")))) +
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(res$Percent)+max(res$Percent)/5), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          axis.line.x =  element_line(color = "grey"),
+          axis.text.x = element_text(angle=45,hjust=1,size=18),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent",colour = NA),
+          #legend.position = "bottom", 
+          legend.position=c(0.5,slide17_leg),
+          legend.margin=margin(t = 0.1,b=0,l=.1, unit='cm'))  + 
+    guides(fill = "none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide9a.png"),
+         plot=plot9a,width =11, height=3,units="in",bg="transparent")
+  
+
+  #Slide 9b
+  ## this is for all repsondents 
+  
+  eligible = c('Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Paleo/Primal', 'Ketogenic', 'Mediterranean', 'Other (please specify):')
+  if (!is_ca){
+    eligible = c(eligible, c('Atkins', 'GMO-Free', 'Whole 30', 'Plant-based', 'Other',"Low-FODMAP","Pescatarian"))
+  } else {
+    eligible = c(eligible, c( 'Flexitarian', 'No Peanut/Tree Nut', 'No Dairy', 'No Gluten', 'Other'))
+  }
+  
+  
+  
+  res <- data_school_c %>% filter(Q23_2=="Special dietary lifestyle for religious reasons"|Q23_3=="Special dietary lifestyle for medical reasons"|Q23_4=="Special dietary lifestyle for personal reasons")%>% 
+    select(dplyr::starts_with("Q25")) %>% select(!dplyr::contains("Q25_18_TEXT")) %>%
+    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q25")) %>%
+    filter(value!="") %>%
+    filter(value %in% eligible) %>%
+    group_by(value) %>% summarize(n=100*n()/nrow(data_school_c))  %>% arrange(desc(n)) %>% 
+    filter(value!='None of the above') %>% 
+    arrange(value %in% c("Other (please specify):"))
+  
+  
+  res$value <- gsub(" \\(please specify\\):","",res$value)
+  
+  
+  res$label<- paste0(roundQual(res$n,0),"%")
+  
+  
+  levels <-  res$value
+  
+  res$value <- factor(res$value, levels = levels)
+  res$Percent <- res$n
+  
+  plot9b<- ggplot(res,aes(x=value,y=Percent,label=label)) + 
+    geom_bar(stat="identity",position="dodge",fill=two_tone[1],width=.5)+ 
+    geom_text(aes(x=value,y=Percent + max(Percent)/10,label=label),size = 6, position = position_dodge(width = .9)) +
+    #scale_fill_manual(breaks = rev(c("Region","Nation",UNIVERSITY_NAME)),values=three_tone,labels=rev(c("  Region  ","   Nation  ",paste(" ",UNIVERSITY_NAME,"  ")))) +
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(res$Percent)+max(res$Percent)/5), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          plot.margin = margin(0, 0, 0, .5, "cm"),
+          axis.line.x =  element_line(color = "grey"),
+          axis.text.x = element_text(angle=45,hjust=1,size =18),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent",colour = NA),
+          #legend.position = "bottom", 
+          legend.position=c(0.5,slide17_leg),
+          
+          legend.margin=margin(t = 0.1,b=0,l=.1, unit='cm'))  + 
+    guides(fill = "none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide9b.png"),
+         plot=plot9b,width =11.1, height=3,units="in",bg="transparent")
+  
+  
+  
+  
+  ####### Slide 10:  Sustainability 
+  
+  if (!is_ca){
+    base <- data_school_c %>% select(dplyr::starts_with("Q30"))  %>% select(!dplyr::contains("Q30ca"))
+    res <- data_school_c %>% select(dplyr::starts_with("Q30")) %>% select(!dplyr::contains("Q30_17_TEXT")) %>%
+      select(!dplyr::contains("Q30_SDS")) 
+  } else {
+    base <- data_school_c %>% select(dplyr::starts_with("Q30ca"))
+    res <- data_school_c %>% select(dplyr::starts_with("Q30ca")) %>% select(!dplyr::contains("TEXT")) %>%
+      select(!dplyr::contains("Q30ca_SDS"))
+  }
+  
+  
+  # how many respondents made some selection for this
+  base_n <- sum(apply(base,MARGIN=1,FUN=function(x){sum(x!="")})!=0)
+  
+  
+  res <- res %>%
+    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q30")) %>%
+    filter(value!="") %>%
+    group_by(value) %>% summarize(n=100*n()/base_n)  %>% arrange(desc(n))%>%
+    arrange(value %in% c("Other (please specify):")) %>% 
+    arrange(value %in% c('None of the above'))
+  
+  
+  
+  
+  res$value <- gsub(" \\(please specify\\):","",res$value)
+  
+  
+  res$label<- paste0(roundQual(res$n,0),"%")
+  
+  
+  levels <-  res$value
+  
+  res$value <- factor(res$value, levels = rev(levels))
+  
+  plotSus<-
+    ggplot(res,aes(x=value,y=n,label=label)) + 
+    geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
+    geom_text(aes(x=value,y=n + max(res$n)/12,label=label),size = 4, position = position_dodge(width = .9)) +
+    coord_flip() + 
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(res$n+max(res$n)/7+10)), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          axis.line.y =  element_line(color = "grey"),
+          axis.text.x = element_blank(), legend.title = element_blank(),
+          # legend.position = "bottom", 
+          legend.position=c(0.4,-0.03),
+          legend.margin=margin(t = 0, unit='cm')) 
+  
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide10.png"),plot=plotSus,width = 8, height=5,units="in")
+  
+  
+  ####### Slide 11a Mobile App Kiosk
+  
+  
+  res <- data.frame(table(data_school_c$Q39)) %>% subset(Var1!="") 
+  base <- sum(res$Freq)
+  res$per <- roundQual(res$Freq*100/base)
+  res <- res %>% 
+    arrange(Var1=="No") %>% 
+    mutate(label=paste0(Var1,": " ,per,"%"))
+  
+  # create labels
+  #res$label_col <- ifelse(res$per<=4,'black', "white")
+  res$label_col <- "black"
+  res$hjust_var <- ifelse(res$per<=4,-3.6,.5)
+  res$Var1 <- factor(res$Var1,levels=c("Yes","No"))
+  
+  
+  
+  df <- res %>% 
+    mutate(end = 2 * pi * cumsum(per)/sum(per),
+           start = lag(end, default = 0),
+           middle = 0.5 * (start + end),
+           hjust = ifelse(middle > pi, 1, 0),
+           vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+  
+  
+  hasMobile<-  ggplot(df) + 
+    geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1,
+                     start = start, end = end, fill = Var1)) +
+    geom_text(aes(x = 1.05 * sin(middle), y = 1.05 * cos(middle), label = label,
+                  hjust = hjust, vjust = vjust)) +
+    scale_fill_manual(values=colors[c(5,3)],breaks=c("Yes","No")) + 
+    coord_fixed() +
+    scale_x_continuous(limits = c(-1.6, 1.6),  # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    scale_y_continuous(limits = c(-1.6, 1.6),    # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    theme_minimal() + guides(fill="none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11a.png"),plot=hasMobile,width = 3.7, height=3.7,units="in")
+  
+  
+  ####### Slide 11b How Often Mobile
+  
+  ##### How often order from mobile kiosk
+  
+  
+  oft <- data_school_c %>% filter(Q41 !="") %>% group_by(Q41) %>% summarize(n=n()) %>% 
+    mutate(per=paste0(roundQual(100*n/sum(n)),"%")) %>%  complete(Q41=c("0 times / week",  "1-2 times / week", "3-5 times / week",
+                                                                        "6-9 times / week", "10+ times / week"),fill=list(n=0,per="0%")) %>% 
+    mutate(Q41 = factor(Q41,levels=c("0 times / week",  "1-2 times / week", "3-5 times / week",
+                                     "6-9 times / week", "10+ times / week"))) %>%
+    arrange(Q41)
+  
+  oft_out <- oft %>% select(Q41,per) %>% gt() %>%cols_label("Q41"="","per"="") %>%
+    cols_align(
+      align = "left",
+      columns= c(1)
+    )%>%
+    cols_align(
+      align = "right",
+      columns= c(2)
+    )  %>%  
+    cols_width(
+      c(2) ~ px(120),
+      c(1) ~ px(300)
+    ) %>% 
+    tab_style(
+      style = list(
+        cell_fill(color = tab_col[1])
+      ),
+      locations = cells_body(
+        rows = c(1,3,5))
+    ) %>% 
+    tab_style(
+      style = list(
+        cell_fill(color = tab_col[2])
+      ),
+      locations = cells_body(
+        rows = c(2,4))
+    ) 
+  
+  
+  gtsave(oft_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide11b.png"))
+  
+  
+  
+  ############### Slide 11 c
+  # why not order at kiosk
+  qs <- c('Q43_1','Q43_4', 'Q43_5', 'Q43_6' )
+  
+  base <- data_school_c %>% select(qs) 
+  
+  
+  res_b <- data_school_c %>% select(qs,ResponseId) %>% 
+    mutate(id=row.names(.)) %>% 
+    select(!dplyr::contains("_SDS")) %>%
+    pivot_longer(cols=dplyr::starts_with("Q43")) %>%
+    filter(value!="") %>%
+    mutate(value = trimws(value)) %>%
+    select(-id) %>%
+    summarise(n=length(unique(ResponseId)))
+  
+  
+  res <- data_school_c %>% select(qs,ResponseId) %>% 
+    mutate(id=row.names(.)) %>% 
+    select(!dplyr::contains("_SDS")) %>%
+    pivot_longer(cols=dplyr::starts_with("Q43")) %>%
+    filter(value!="") %>%
+    mutate(value = trimws(value)) %>%
+    select(-id) %>%
+    group_by(value) %>%
+    summarize(count = n()) %>%
+    ungroup() %>%
+    mutate(sum_t = sum(count)) 
+  
+  # add potentially missing rows
+  all_lev <- data %>% select(qs) %>% 
+    mutate(id=row.names(.)) %>% 
+    select(!dplyr::contains("_SDS")) %>%
+    pivot_longer(cols=dplyr::starts_with("Q43")) %>% 
+    filter(value!="") %>%
+    mutate(value = trimws(value)) %>%
+    select(-id) %>%
+    group_by(value) %>% summarize(tot=n()) %>% ungroup()
+  
+  res <- res %>%  right_join(all_lev,by="value")%>%
+    mutate(n= roundQual(100*replace_na(count,0)/res_b$n))%>% 
+    mutate(value=gsub(" \\(please specify\\):","",value),per=paste0(n,"%")) 
+  
+  
+  
+  
+  
+  not_out <- res %>% select(value,per) %>% gt() %>%cols_label("value"="","per"="") %>%
+    cols_align(
+      align = "left",
+      columns= c(1)
+    )%>%
+    cols_align(
+      align = "right",
+      columns= c(2)
+    )%>%  
+    cols_width(
+      c(2) ~ px(120),
+      c(1) ~ px(300)
+    ) %>% 
+    tab_style(
+      style = list(
+        cell_fill(color = colors[3])
+      ),
+      locations = cells_body(
+        rows = c(2))
+    ) %>% 
+    tab_style(
+      style = list(
+        cell_fill(color = "#EEEEEE")
+      ),
+      locations = cells_body(
+        rows = c(1,3))
+    ) 
+  
+  gtsave(not_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide11c.png"))
+  
+
+  
+  ##### Slide 11 d : Preferred technologies
+  
+  base <- data_school_c %>% select(dplyr::starts_with("Q45")) 
+  # how many respondents made some selection for this
+  base_n <- sum(apply(base,MARGIN=1,FUN=function(x){sum(x!="")})!=0)
+  
+  res_s <- data_school_c %>%
+    select(dplyr::starts_with("Q45")) %>% select(!dplyr::contains("_TEXT")) %>%
+    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q45")) %>%
+    filter(value!="") %>%
+    mutate(value= gsub(" (please specify):","",value,fixed=T)) %>% 
+    group_by(value) %>% summarize(n=100*n()/base_n)  %>% arrange(desc(n)) %>% 
+    arrange(value %in% c("None of the above","Other"))
+  
+  res_all <- data %>%
+    select(dplyr::starts_with("Q45")) %>% select(!dplyr::contains("_TEXT")) %>%
+    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q45")) %>%
+    filter(value!="") %>%
+    mutate(value= gsub(" (please specify):","",value,fixed=T)) %>% 
+    group_by(value) %>% summarize(n_all=100*n()/base_n) 
+  
+  res <- merge(res_s,res_all,by="value",all=T)
+  res$Percent <- ifelse(is.na(res$n),0,res$n)
+  res$n <- ifelse(is.na(res$n),0,res$n)
+  
+  
+  res$value <- unlist(lapply(res$value,FUN=function(x){paste(strwrap(x,30),collapse="\n")}))
+  
+  
+  res$label<- paste0(roundQual(res$Percent,0),"%")
+  
+  res <- res %>% arrange(desc(n)) %>% arrange(value=="Other")  %>% arrange(value=="None of the above") 
+  levels <-  res$value
+  
+  res$value <- factor(res$value, levels = rev(levels))
+  
+  plotTech<-
+    ggplot(res,aes(x=value,y=n,label=label)) + 
+    geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
+    geom_text(aes(x=value,y=n + max(res$Percent)/7,label=label),size = 4, position = position_dodge(width = .9)) +
+    coord_flip() + 
+    theme_minimal() + ylab("") + xlab("") +
+    scale_y_continuous(limits = c(0,max(res$Percent+max(res$Percent)/7+10)), expand=c(0,0)) +
+    theme(panel.grid = element_blank(),
+          axis.line.y =  element_line(color = "grey"),
+          #axis.text.y=element_text(size=13),
+          axis.text.x = element_blank(), legend.title = element_blank(),
+          # legend.position = "bottom", 
+          legend.position=c(0.4,-0.03),
+          legend.margin=margin(t = 0, unit='cm')) 
+  
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11d.png"),plot=plotTech,width = 4, height=3.5,units="in")
+  
+  
+  
+} 
+
+
+
+get_graphs(data, data_last, 'University of Virginia')
+
+
+
+
+get_graphs_old <- function(){
+  
+  ####### Slide  OVERALL EXPERIENCE SLide 6 
+  ## These are just students
+  
+  top_two <- function(x,dataset){
+    roundQual(100*sum(grepl("excellent|good|^agree|strongly agree|definitely will buy|probably will buy",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
+  }
+
+
+  if (HAS_LAST){
+    sat <- data_grp_bar('Q2.1', stacked_labels=TRUE,comp=T)
+    sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
+    sat_this$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c),"%")
+    sat_this$year <- this_year
+    sat_this$year <- paste0(sat_this$year,sat_this$top2)
+    
+    sat_last <- data_grp_bar('Q2.1', stacked_labels=TRUE,uselast = T) %>% filter(!Location%in%c("Region", "Nation"))
+    sat_last$year <- last_year
+    sat_last$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c_last),"%")
+    sat_last$year <- paste0(sat_last$year,sat_last$top2)
+    
+    sat <- bind_rows(sat_this,sat_last)
+    sat$hjust_var <- ifelse(sat$Percent<=4,-3.6,.5)
+    
+    
+    years <- c(unique(sat_last$year),unique(sat_this$year))
+    
+  } else{
+    sat <- data_grp_bar('Q2.1', stacked_labels=TRUE,comp=T)
+    sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
+    sat$year <- this_year
+    sat$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c),"%")
+    sat$year <- paste0(sat$year,sat$top2)
+    sat$hjust_var <- ifelse(sat$Percent<=4,-6.2,.5) 
+    years <- unique(sat$year)
+  }
+  
+  sat$Value <- as.factor(sat$Q2.1)
+  sat$label_col <- ifelse(sat$Value %in% c("Excellent","Good"),"black","white")
+
+  #adust label color if it is off the side to be black
+  sat$label_col <- ifelse(sat$Percent<=4,'black', sat$label_col)
+  
+  
+  
+  sat$Value <- factor(sat$Value, levels <- c( "Excellent", "Good","Average", "Poor", 
+                                              "Terrible"))
+  
+  
+  sat$year <- factor(sat$year,levels=years)
+  
+  sat_plot<- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
+    geom_bar(stat="identity",width=.5)+ 
+    geom_text_repel(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
+    scale_x_discrete(position = "top")  + 
+    scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Average","Poor","Terrible"))) +
+    scale_color_manual(values=c("black","white"))+
+    theme_minimal() + ylab("") + xlab("") + 
+    theme(panel.grid = element_blank(),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          axis.text.x=element_text(size=13),
+          legend.text=element_text(size=13),
+          # legend.position = "left", 
+          plot.margin = margin(l=.7, unit="cm"),
+          legend.position=c(0.01,0.5),
+          legend.margin=margin(t = 0, unit='cm')) + guides(color="none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideSat.png"),plot=sat_plot,width = 7, height=4.5,units="in")
+  
+  
  
+  
+  
+  
+  
+  
+  
+  
   
   ################### Replace dot charts with these satisfaction charts, for now just did the first one
   
@@ -1478,119 +1878,10 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   
   
   
-    ####### Slide 17 
-  ## this is for all repsondents 
-  
-  eligible = c('Milk', 'Eggs', 'Peanuts', 'Tree nuts', 'Fish', 'Shellfish', 'Soy', 
-               'Wheat/Gluten', 'Sesame',  'Other')
-  if (is_ca){
-    eligible = c(eligible, 'Mustard')
-  }
-  
-  
-  
-  res <- data_school_c %>% filter(Q69_1=="Food allergies or intolerances")%>% 
-    select(dplyr::starts_with("Q70")) %>% select(!dplyr::contains("Q70_10_TEXT")) %>%
-    select(!dplyr::contains("Q70_SDS")) %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q70")) %>%
-    filter(value!="") %>%
-    group_by(value) %>% summarize(n=100*n()/nrow(data_school_c))  %>% arrange(desc(n)) %>% 
-    filter(value!='None of the above') %>% 
-    filter(value %in% eligible) %>%
-    arrange(value %in% c("Other (please specify)"))
-  
-  res$value <- gsub(" \\(please specify\\)","",res$value)
+
+
   
  
-  
-  
-  
-  res$label<- paste0(roundQual(res$n,0),"%")
-  
-  
-  levels <-  res$value
-  
-  res$value <- factor(res$value, levels = levels)
-  res$Percent <- res$n
-  
-  plot17<- ggplot(res,aes(x=value,y=Percent,label=label)) + 
-    geom_bar(stat="identity",position="dodge",fill=two_tone[1],width=.5)+ 
-    geom_text(aes(x=value,y=Percent + max(Percent)/10,label=label),size = 6, position = position_dodge(width = .9)) +
-    #scale_fill_manual(breaks = rev(c("Region","Nation",UNIVERSITY_NAME)),values=three_tone,labels=rev(c("  Region  ","   Nation  ",paste(" ",UNIVERSITY_NAME,"  ")))) +
-    theme_minimal() + ylab("") + xlab("") +
-    scale_y_continuous(limits = c(0,max(res$Percent)+max(res$Percent)/5), expand=c(0,0)) +
-    theme(panel.grid = element_blank(),
-          axis.line.x =  element_line(color = "grey"),
-          axis.text.x = element_text(angle=45,hjust=1,size=18),
-          axis.text.y = element_blank(), legend.title = element_blank(),
-          panel.background = element_rect(fill = "transparent",colour = NA),
-          plot.background = element_rect(fill = "transparent",colour = NA),
-          #legend.position = "bottom", 
-          legend.position=c(0.5,slide17_leg),
-          legend.margin=margin(t = 0.1,b=0,l=.1, unit='cm'))  + 
-    guides(fill = "none")
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide17a.png"),
-         plot=plot17,width =11, height=3,units="in",bg="transparent")
-
-  
-  ####### Slide 17 b 
-  ## this is for all repsondents 
-  
-  eligible = c('Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Paleo/Primal', 'Ketogenic', 'Mediterranean')
-  if (!is_ca){
-    eligible = c(eligible, c('Atkins', 'GMO-Free', 'Whole 30', 'Plant-based', 'Other',"Low-FODMAP","Pescatarian"))
-  } else {
-    eligible = c(eligible, c( 'Flexitarian', 'No Peanut/Tree Nut', 'No Dairy', 'No Gluten', 'Other'))
-  }
-  
-               
-
-  
-  
-  res <- data_school_c %>% filter(Q69_2=="Special dietary lifestyle for personal preference or religious reasons")%>% 
-    select(dplyr::starts_with("Q71")) %>% select(!dplyr::contains("Q71_14_TEXT")) %>%
-    select(!dplyr::contains("Q71_SDS")) %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q71")) %>%
-    filter(value!="") %>%
-    filter(value %in% eligible) %>%
-    group_by(value) %>% summarize(n=100*n()/nrow(data_school_c))  %>% arrange(desc(n)) %>% 
-  filter(value!='None of the above') %>% 
-    arrange(value %in% c("Other (please specify)"))
-  
-  
-  res$value <- gsub(" \\(please specify\\)","",res$value)
-  
-  
-  res$label<- paste0(roundQual(res$n,0),"%")
-  
-  
-  levels <-  res$value
-  
-  res$value <- factor(res$value, levels = levels)
-  res$Percent <- res$n
-  
-  plot17b<- ggplot(res,aes(x=value,y=Percent,label=label)) + 
-    geom_bar(stat="identity",position="dodge",fill=two_tone[1],width=.5)+ 
-    geom_text(aes(x=value,y=Percent + max(Percent)/10,label=label),size = 6, position = position_dodge(width = .9)) +
-    #scale_fill_manual(breaks = rev(c("Region","Nation",UNIVERSITY_NAME)),values=three_tone,labels=rev(c("  Region  ","   Nation  ",paste(" ",UNIVERSITY_NAME,"  ")))) +
-    theme_minimal() + ylab("") + xlab("") +
-    scale_y_continuous(limits = c(0,max(res$Percent)+max(res$Percent)/5), expand=c(0,0)) +
-    theme(panel.grid = element_blank(),
-          plot.margin = margin(0, 0, 0, .5, "cm"),
-          axis.line.x =  element_line(color = "grey"),
-          axis.text.x = element_text(angle=45,hjust=1,size =18),
-          axis.text.y = element_blank(), legend.title = element_blank(),
-          panel.background = element_rect(fill = "transparent",colour = NA),
-          plot.background = element_rect(fill = "transparent",colour = NA),
-          #legend.position = "bottom", 
-          legend.position=c(0.5,slide17_leg),
-          
-          legend.margin=margin(t = 0.1,b=0,l=.1, unit='cm'))  + 
-    guides(fill = "none")
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide17b.png"),
-         plot=plot17b,width =11.1, height=3,units="in",bg="transparent")
   
   ########################## this slide is for cuisine 
   # those who want to use off campus
@@ -1867,63 +2158,7 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideVegType.png"),bg = "transparent", plot=slideVegType,width = 8, height=4,units="in")
   
   
-  
-   ####### Slide Sustainability 
-  
-  if (!is_ca){
-    base <- data_school_c %>% select(dplyr::starts_with("Q73"))  %>% select(!dplyr::contains("Q73ca"))
-    res <- data_school_c %>% select(dplyr::starts_with("Q73")) %>% select(!dplyr::contains("Q73_16_TEXT")) %>%
-      select(!dplyr::contains("Q73_SDS")) %>% select(!dplyr::contains("Q73ca"))
-  } else {
-    base <- data_school_c %>% select(dplyr::starts_with("Q73ca"))
-    res <- data_school_c %>% select(dplyr::starts_with("Q73ca")) %>% select(!dplyr::contains("TEXT")) %>%
-      select(!dplyr::contains("Q73ca_SDS"))
-  }
-  
-  
-  # how many respondents made some selection for this
-  base_n <- sum(apply(base,MARGIN=1,FUN=function(x){sum(x!="")})!=0)
-  
-  
-  res <- res %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q73")) %>%
-    filter(value!="") %>%
-    group_by(value) %>% summarize(n=100*n()/base_n)  %>% arrange(desc(n))%>%
-    arrange(value %in% c("Other (please specify)")) %>% 
-    arrange(value %in% c('None of the above'))
-    
-    
-    
-  
-  res$value <- gsub(" \\(please specify\\)","",res$value)
-  
- # res$value <- unlist(lapply(res$value,FUN=function(x){paste(strwrap(x,45),collapse="\n")}))
-  
-  
-  res$label<- paste0(roundQual(res$n,0),"%")
-  
-  
-  levels <-  res$value
-  
-  res$value <- factor(res$value, levels = rev(levels))
-  
-  plotSus<-
-    ggplot(res,aes(x=value,y=n,label=label)) + 
-    geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
-    geom_text(aes(x=value,y=n + max(res$n)/12,label=label),size = 4, position = position_dodge(width = .9)) +
-    coord_flip() + 
-    theme_minimal() + ylab("") + xlab("") +
-    scale_y_continuous(limits = c(0,max(res$n+max(res$n)/7+10)), expand=c(0,0)) +
-    theme(panel.grid = element_blank(),
-          axis.line.y =  element_line(color = "grey"),
-          axis.text.x = element_blank(), legend.title = element_blank(),
-          # legend.position = "bottom", 
-          legend.position=c(0.4,-0.03),
-          legend.margin=margin(t = 0, unit='cm')) 
-  
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","plotSustain.png"),plot=plotSus,width = 8, height=5,units="in")
-  
+
   
   
   ####### Slide Top priorities
@@ -2257,47 +2492,7 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   
   ##################### Slide 31- many graphs and tables
   
-  
-  res <- data.frame(table(data_school_c$Q103)) %>% subset(Var1!="") 
-  base <- sum(res$Freq)
-  res$per <- roundQual(res$Freq*100/base)
-  res <- res %>% 
-    arrange(Var1=="No") %>% 
-    mutate(label=paste0(Var1,": " ,per,"%"))
-  
-  # create labels
-  #res$label_col <- ifelse(res$per<=4,'black', "white")
-  res$label_col <- "black"
-  res$hjust_var <- ifelse(res$per<=4,-3.6,.5)
-  res$Var1 <- factor(res$Var1,levels=c("Yes","No"))
-  
-  
-  
-  df <- res %>% 
-    mutate(end = 2 * pi * cumsum(per)/sum(per),
-           start = lag(end, default = 0),
-           middle = 0.5 * (start + end),
-           hjust = ifelse(middle > pi, 1, 0),
-           vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
-  
-  
-  hasMobile<-  ggplot(df) + 
-    geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1,
-                     start = start, end = end, fill = Var1)) +
-    geom_text(aes(x = 1.05 * sin(middle), y = 1.05 * cos(middle), label = label,
-                  hjust = hjust, vjust = vjust)) +
-    scale_fill_manual(values=colors[c(5,3)],breaks=c("Yes","No")) + 
-    coord_fixed() +
-    scale_x_continuous(limits = c(-1.6, 1.6),  # Adjust so labels are not cut off
-                       name = "", breaks = NULL, labels = NULL) +
-    scale_y_continuous(limits = c(-1.6, 1.6),    # Adjust so labels are not cut off
-                       name = "", breaks = NULL, labels = NULL) +
-    theme_minimal() + guides(fill="none")
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","hasMobile.png"),plot=hasMobile,width = 3.7, height=3.7,units="in")
-  
-  
-  
+
   
   res <- data.frame(table(data_school_c$Q104)) %>% subset(Var1!="") 
   base <- sum(res$Freq)
@@ -2340,124 +2535,6 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","hasKiosk.png"),plot=hasKiosk,width = 3.5, height=3.5,units="in")
   
 
-  
-  ##### Howoften order 
-  
-  
-  oft <- data_school_c %>% filter(Q105 !="") %>% group_by(Q105) %>% summarize(n=n()) %>% 
-    mutate(per=paste0(roundQual(100*n/sum(n)),"%")) %>%  complete(Q105=c("0 times / week",  "1-2 times / week", "3-5 times / week",
-                      "6-9 times / week", "10+ times / week"),fill=list(n=0,per="0%")) %>% 
-    mutate(Q105 = factor(Q105,levels=c("0 times / week",  "1-2 times / week", "3-5 times / week",
-                                       "6-9 times / week", "10+ times / week"))) %>%
-    arrange(Q105)
-  
- oft_out <- oft %>% select(Q105,per) %>% gt() %>%cols_label("Q105"="","per"="") %>%
-    cols_align(
-      align = "left",
-      columns= c(1)
-    )%>%
-   cols_align(
-     align = "right",
-     columns= c(2)
-   )  %>%  
-    cols_width(
-      c(2) ~ px(120),
-      c(1) ~ px(300)
-    ) %>% 
-   tab_style(
-     style = list(
-       cell_fill(color = tab_col[1])
-     ),
-     locations = cells_body(
-       rows = c(1,3,5))
-   ) %>% 
-   tab_style(
-     style = list(
-       cell_fill(color = tab_col[2])
-     ),
-     locations = cells_body(
-       rows = c(2,4))
-   ) 
-
-  
-  gtsave(oft_out,filename = paste0(loc,UNIVERSITY_NAME,"/","oft_out.png"))
-  
-  # why not
-  ############################ slide 29 eas of pick up
-  qs <- c('Q107_1','Q107_4', 'Q107_5', 'Q107_6' )
-  
-  base <- data_school_c %>% select(qs) 
-  
-  
-  res_b <- data_school_c %>% select(qs,ResponseId) %>% 
-    mutate(id=row.names(.)) %>% 
-    select(!dplyr::contains("_SDS")) %>%
-    pivot_longer(cols=dplyr::starts_with("Q107")) %>%
-    filter(value!="") %>%
-    mutate(value = trimws(value)) %>%
-    select(-id) %>%
-    summarise(n=length(unique(ResponseId)))
-  
-  
-  res <- data_school_c %>% select(qs,ResponseId) %>% 
-    mutate(id=row.names(.)) %>% 
-    select(!dplyr::contains("_SDS")) %>%
-    pivot_longer(cols=dplyr::starts_with("Q107")) %>%
-    filter(value!="") %>%
-    mutate(value = trimws(value)) %>%
-    select(-id) %>%
-    group_by(value) %>%
-    summarize(count = n()) %>%
-    ungroup() %>%
-    mutate(sum_t = sum(count)) 
-  
-  # add potentially missing rows
-  all_lev <- data %>% select(qs) %>% 
-    mutate(id=row.names(.)) %>% 
-    select(!dplyr::contains("_SDS")) %>%
-    pivot_longer(cols=dplyr::starts_with("Q107")) %>% 
-    filter(value!="") %>%
-  mutate(value = trimws(value)) %>%
-    select(-id) %>%
-    group_by(value) %>% summarize(tot=n()) %>% ungroup()
-  
-  res <- res %>%  right_join(all_lev,by="value")%>%
-    mutate(n= roundQual(100*replace_na(count,0)/res_b$n))%>% 
-    mutate(value=gsub(" \\(please specify\\):","",value),per=paste0(n,"%")) 
-  
-
-  
-
-
-  not_out <- res %>% select(value,per) %>% gt() %>%cols_label("value"="","per"="") %>%
-    cols_align(
-      align = "left",
-      columns= c(1)
-    )%>%
-    cols_align(
-      align = "right",
-      columns= c(2)
-    )%>%  
-    cols_width(
-      c(2) ~ px(120),
-      c(1) ~ px(300)
-    ) %>% 
-    tab_style(
-      style = list(
-        cell_fill(color = colors[3])
-      ),
-      locations = cells_body(
-        rows = c(2))
-    ) %>% 
-    tab_style(
-      style = list(
-        cell_fill(color = "#EEEEEE")
-      ),
-      locations = cells_body(
-        rows = c(1,3))
-    ) 
-  
-  gtsave(not_out,filename = paste0(loc,UNIVERSITY_NAME,"/","not_out.png"))
 
   ###################  slide 31 - technology 
   
@@ -2502,58 +2579,7 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   
   
   ##technology 
-  base <- data_school_c %>% select(dplyr::starts_with("Q109")) 
-  # how many respondents made some selection for this
-  base_n <- sum(apply(base,MARGIN=1,FUN=function(x){sum(x!="")})!=0)
-  
-  res_s <- data_school_c %>%
-    select(dplyr::starts_with("Q109")) %>% select(!dplyr::contains("_TEXT")) %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q109")) %>%
-    filter(value!="") %>%
-    mutate(value= gsub(" (please specify):","",value,fixed=T)) %>% 
-    group_by(value) %>% summarize(n=100*n()/base_n)  %>% arrange(desc(n)) %>% 
-    arrange(value %in% c("None of the above","Other"))
-  
-  res_all <- data %>%
-    select(dplyr::starts_with("Q109")) %>% select(!dplyr::contains("_TEXT")) %>%
-    mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q109")) %>%
-    filter(value!="") %>%
-    mutate(value= gsub(" (please specify):","",value,fixed=T)) %>% 
-    group_by(value) %>% summarize(n_all=100*n()/base_n) 
-  
-  res <- merge(res_s,res_all,by="value",all=T)
-  res$Percent <- ifelse(is.na(res$n),0,res$n)
-  res$n <- ifelse(is.na(res$n),0,res$n)
-  
-  
-  res$value <- unlist(lapply(res$value,FUN=function(x){paste(strwrap(x,30),collapse="\n")}))
-  
-  
-  res$label<- paste0(roundQual(res$Percent,0),"%")
-  
-  res <- res %>% arrange(desc(n)) %>% arrange(value=="Other")  %>% arrange(value=="None of the above") 
-  levels <-  res$value
-  
-  res$value <- factor(res$value, levels = rev(levels))
-  
-  plotTech<-
-    ggplot(res,aes(x=value,y=n,label=label)) + 
-    geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
-    geom_text(aes(x=value,y=n + max(res$Percent)/7,label=label),size = 4, position = position_dodge(width = .9)) +
-    coord_flip() + 
-    theme_minimal() + ylab("") + xlab("") +
-    scale_y_continuous(limits = c(0,max(res$Percent+max(res$Percent)/7+10)), expand=c(0,0)) +
-    theme(panel.grid = element_blank(),
-          axis.line.y =  element_line(color = "grey"),
-          #axis.text.y=element_text(size=13),
-          axis.text.x = element_blank(), legend.title = element_blank(),
-          # legend.position = "bottom", 
-          legend.position=c(0.4,-0.03),
-          legend.margin=margin(t = 0, unit='cm')) 
-  
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","plotTech.png"),plot=plotTech,width = 4, height=3.5,units="in")
-  
+
   
   
   ####### Slide 21b enrollment status
