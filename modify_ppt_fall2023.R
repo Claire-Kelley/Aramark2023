@@ -87,11 +87,18 @@ roundQual <- function(x,n){floor(x+.5)}
 # read in data 
 
 ## Read in Data
-last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
-#last_path <- '/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark_Spring_2023/AramarkFall2022/data_files'
+#last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
+last_path <- 'data_files'
 ### 
-last_data <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
+
+#last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
+#TODO: sarah to get file
+last_data <- read.csv(paste0(last_path,"/spring2023_temp.csv"),stringsAsFactors=FALSE)
+
 last_data <- last_data[3:nrow(last_data),]
+
+last_data_fall_22 <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
+last_data_fall_22 <- last_data_fall_22[3:nrow(last_data_fall_22),]
 
 last_data_spring_22 <- read.csv(paste0(last_path,'/Spring_2022_v4.csv'),stringsAsFactors=FALSE)
 last_data_spring_22 <- last_data_spring_22[3:nrow(last_data_spring_22),]
@@ -117,58 +124,67 @@ last_data21$SCHOOL_NAME <- ifelse(last_data21$SCHOOL_NAME =="Simmons College","S
 last_data_spring21 <- read.csv(paste0(last_path,'/spring2021.csv'),stringsAsFactors=FALSE)
 last_data_spring21 <- last_data_spring21[3:nrow(last_data_spring21),]
 
-## and fall 2020
 last_data_fall20 <- read.csv(paste0(last_path,'/fall2020_V2.csv'),stringsAsFactors=FALSE)
 last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
 
 
-data<- read.csv("spring2023_final.csv",stringsAsFactors=FALSE)
+#data<- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023.csv",stringsAsFactors=FALSE)
+data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
+
 # merge in names
-outlets <- read.csv("Spring2023_outlets.csv")
+#TODO sarah to get outlest file
+#outlets <- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Spring2023_outlets.csv")
+outlets <- read.csv("Fall2022_outlets.csv")
 
-# NOTE THIS ONLY WORKS for all USA 
-data$SCHOOL_USA <- data$SCHOOL_NAME  
 
+## Fix names 
+data$SCHOOL_NAME <- ifelse(data$Q0=="USA",data$Q1_USA, data$Q1_CAN)
 
 data$SCHOOL_NAME <- ifelse(data$SCHOOL_NAME =="Simmons College","Simmons University", data$SCHOOL_NAME)
 data$SCHOOL_USA <- data$SCHOOL_NAME
+
+# Split nationall - needed every year canada exists (ie starting spring 2023)
+data_ca <- data[data$SCHOOL_CAN!="",]
 data_us <- data[data$COUNTRY=="USA",]
 
 # cod the "last year", will need to manually change this 
-all_reps <- data %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) %>% filter(n>46)
+all_reps <- data_us %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
 all_reps$last_year <- ""
 
-all_reps_fall2022 <- last_data %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) %>% filter(n>46)
+all_reps_spring2023 <- last_data %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
+all_reps$last_year <- ifelse(all_reps$SCHOOL_NAME %in% all_reps_spring2023$SCHOOL_NAME,"Spring 2023",all_reps$last_year)
+
+
+all_reps_fall2022 <- last_data_fall_22 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
 all_reps$last_year <- ifelse(all_reps$SCHOOL_NAME %in% all_reps_fall2022$SCHOOL_NAME,"Fall 2022",all_reps$last_year)
 
-all_reps_spring2022 <- last_data_spring_22 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) %>% filter(n>46)
+all_reps_spring2022 <- last_data_spring_22 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
 all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %in% all_reps_spring2022$SCHOOL_NAME),"Spring 2022",all_reps$last_year)
 
 
 all_reps_fall2021 <- last_data21 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) %>% filter(n>49)
 all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %in% all_reps_fall2021$SCHOOL_NAME),"Fall 2021",all_reps$last_year)
 
-all_reps_spring2021 <- last_data_spring21 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) %>% filter(n>49)
+all_reps_spring2021 <- last_data_spring21 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) 
 all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %in% all_reps_spring2021$SCHOOL_NAME),"Spring 2021",all_reps$last_year)
 
 
-all_reps_fall2020<- last_data_fall20 %>% group_by(SCHOOL_NAME) %>% summarize(n=n()) %>% filter(n>49)
-all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %in% all_reps_fall2020$SCHOOL_NAME),"Fall 2020",all_reps$last_year)
 
 
 
-
-
-
+#for working
+UNIVERSITY_NAME <-  "University of Virginia"
+data_last <- last_data
+last_year ="Spring 2023"
 
 run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
   
 
     # make student only data set 
     data_c <- data 
-    data <- data %>% filter(grepl("student|Other",Q1.1))
+    data <- data %>% filter(grepl("student|Other",Q2))
     
     data_c_last <- last_data 
     data_last <- last_data %>% filter(grepl("student|Other",Q1.1))
@@ -193,9 +209,9 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     REGION <- region[[1]]
   
     data_region_c <- data_c[data_c$REGION_NAME==REGION,]
-    data_region <- data_region_c %>% filter(grepl("student|Other",Q1.1))
+    data_region <- data_region_c %>% filter(grepl("student|Other",Q2))
     
-    
+    #TODO: Claire are we sure about this including other?
     data_region_c_last <- filter(data_c_last, REGION_NAME==REGION)
     data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
     
@@ -208,7 +224,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       select(MARKET_SEGMENT) %>% slice(1)
     MARKET_SEG <- market_seg[[1]]
     data_market_c <- filter(data_c, MARKET_SEGMENT==MARKET_SEG)
-    data_market <- data_market_c %>% filter(grepl("student|Other",Q1.1))
+    data_market <- data_market_c %>% filter(grepl("student|Other",Q2))
     
     data_market_c_last <- filter(data_c_last, MARKET_SEGMENT==MARKET_SEG)
     data_market_last <- data_market_c_last %>% filter(grepl("student|Other",Q1.1))
@@ -218,7 +234,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     ################################################################################################
     # Read in template 
     if (!ca){
-      my_pres <- read_pptx("Template Spring 2023.pptx") 
+      my_pres <- read_pptx("DSS F2023 USA report template.pptx") 
     } else {
       my_pres <- read_pptx("Template Spring 2023 CA.pptx") 
     }
@@ -237,10 +253,118 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     needs_wrap <- (length(strwrap(UNIVERSITY_NAME,44))>2)
     
     if (needs_wrap){
-      bold_face <- update(shortcuts$fp_bold(font.size = 24),color="white")
+      bold_face <- update(shortcuts$fp_bold(font.size = 16),color="white")
     } else {
-      bold_face <- update(shortcuts$fp_bold(font.size = 30),color="white")
+      bold_face <- update(shortcuts$fp_bold(font.size = 18),color="white")
     }
+    
+
+    
+    
+    university_par <- fpar(
+      ftext(UNIVERSITY_NAME , prop = bold_face),fp_p = fp_par(text.align="right") )
+    
+    my_pres <-  my_pres %>% on_slide(index=1) %>%
+      ph_with_fpars_at(fpars=list(university_par), 
+                       left=1.75,top=-.29,height=1,width=8
+      ) 
+    
+    print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
+    
+}
+
+run_report(data, data_last, 'University of Virginia', last_year='Spring 2023')
+
+old_run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
+  
+  
+  # make student only data set 
+  data_c <- data 
+  data <- data %>% filter(grepl("student|Other",Q1.1))
+  
+  data_c_last <- last_data 
+  data_last <- last_data %>% filter(grepl("student|Other",Q1.1))
+  
+  # School data 
+  data_school_c <- data_c %>% filter(SCHOOL_USA== UNIVERSITY_NAME)
+  data_school <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) 
+  
+  data_school_c_last <- data_c_last %>% filter(SCHOOL_USA== UNIVERSITY_NAME)
+  data_school_last <- data_last %>% filter(SCHOOL_USA== UNIVERSITY_NAME) 
+  
+  if (nrow(data_school_c_last)>50) {
+    HAS_LAST = TRUE
+  } else {
+    HAS_LAST = FALSE
+  }
+  
+  #get region
+  region <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
+    select(REGION_NAME) %>% slice(1)
+  
+  REGION <- region[[1]]
+  
+  data_region_c <- data_c[data_c$REGION_NAME==REGION,]
+  data_region <- data_region_c %>% filter(grepl("student|Other",Q2))
+  
+  #TODO: Claire are we sure about this including other?
+  data_region_c_last <- filter(data_c_last, REGION_NAME==REGION)
+  data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
+  
+  # add region to those without it
+  REGION <- ifelse(!grepl("Region",REGION),paste0(REGION," Region"),REGION)
+  
+  
+  #get market segment
+  market_seg <- data_c %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
+    select(MARKET_SEGMENT) %>% slice(1)
+  MARKET_SEG <- market_seg[[1]]
+  data_market_c <- filter(data_c, MARKET_SEGMENT==MARKET_SEG)
+  data_market <- data_market_c %>% filter(grepl("student|Other",Q2))
+  
+  data_market_c_last <- filter(data_c_last, MARKET_SEGMENT==MARKET_SEG)
+  data_market_last <- data_market_c_last %>% filter(grepl("student|Other",Q1.1))
+  
+  
+  
+  ################################################################################################
+  # Read in template 
+  if (!ca){
+    my_pres <- read_pptx("DSS F2023 USA report template.pptx") 
+  } else {
+    my_pres <- read_pptx("Template Spring 2023 CA.pptx") 
+  }
+  
+  
+  VERYLONG <- nchar(UNIVERSITY_NAME) >30
+  
+  UNIVERSITY_NAME_SHORT <- ifelse(nchar(UNIVERSITY_NAME) >= 23, paste(strwrap(UNIVERSITY_NAME,23),collapse = "\n  "), UNIVERSITY_NAME)
+  
+  
+  ################################################################################################
+  # Slide One - Change Title To university name 
+  # TODO: move line down if the title breaks over two lines
+  # first title is smaller if name is very long 
+  print("at slide 1")
+  needs_wrap <- (length(strwrap(UNIVERSITY_NAME,44))>2)
+  
+  if (needs_wrap){
+    bold_face <- update(shortcuts$fp_bold(font.size = 24),color="white")
+  } else {
+    bold_face <- update(shortcuts$fp_bold(font.size = 30),color="white")
+  }
+  
+  
+  
+  
+  university_par <- fpar(
+    ftext(UNIVERSITY_NAME , prop = bold_face),fp_p = fp_par(text.align="right") )
+  
+  my_pres <-  my_pres %>% on_slide(index=1) %>%
+    ph_with_fpars_at(fpars=list(university_par), 
+                     left=.75,top=2.25,height=1,width=8
+    ) 
+  
     
     if (needs_wrap){
       slide_2_height <- 2.4
@@ -251,14 +375,6 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       slide_6_height <- 2.6
     }
     
-    
-    university_par <- fpar(
-      ftext(UNIVERSITY_NAME , prop = bold_face),fp_p = fp_par(text.align="center") )
-    
-    my_pres <-  my_pres %>% on_slide(index=1) %>%
-      ph_with_fpars_at(fpars=list(university_par), 
-                       left=.75,top=2.25,height=1,width=8
-      ) 
     ################################################################################################
     # Slide Two 
     # about all respondents
@@ -1931,7 +2047,7 @@ par_desc <- fpar(ftext1, ftext2,ftext3)
 
 }
 
-
+#find_me
 
 ###############################################
 ################## Run reports Spring 2023 ######
