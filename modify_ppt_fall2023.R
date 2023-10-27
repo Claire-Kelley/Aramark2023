@@ -181,6 +181,7 @@ last_year ="Spring 2023"
 
 run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
   
+   graph_loc = "graphs_fall_2023/"
 
     # make student only data set 
     data_c <- data 
@@ -244,6 +245,30 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
    
     UNIVERSITY_NAME_SHORT <- ifelse(nchar(UNIVERSITY_NAME) >= 23, paste(strwrap(UNIVERSITY_NAME,23),collapse = "\n  "), UNIVERSITY_NAME)
   
+    
+    add_sample <- function(p1,p2,p3,p4,p5=NULL) {
+      sample_size1 <- fpar(
+        ftext(p1,
+              fp_text( font.size = 7)))
+      sample_size2 <- fpar(
+        ftext(p2,
+              fp_text( font.size = 7)))
+      sample_size3 <- fpar(
+        ftext(p3,
+              fp_text( font.size = 7)))
+      sample_size4 <- fpar(
+        ftext(p4,
+              fp_text( font.size = 7)))
+      if(!is.null(p5)){
+        sample_size5 <- fpar(
+          ftext(p5,
+                fp_text( font.size = 7)))
+        return(list(sample_size1,sample_size2,sample_size3,sample_size4,sample_size5))
+      } else{
+        return(list(sample_size1,sample_size2,sample_size3,sample_size4))
+      }
+      
+    }
 
     ################################################################################################
     # Slide One - Change Title To university name 
@@ -269,6 +294,89 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
                        left=1.75,top=-.29,height=1,width=8
       ) 
     
+    ####### SLide 2
+    ################################################################################################
+    
+    # Add Sample and Nsize with formatting for numbers 
+    UNIVERSITY_N <- n_format(nrow(data_school_c)) # sample size for universty 
+    REGION_N <- n_format(nrow(data_region_c)) # sample size for this region
+    NATIONAL_N <- n_format(nrow(data_c)) # sample size for entire study
+    
+    university_name_par <- fpar(
+      ftext(UNIVERSITY_NAME,prop =  fp_text(font.size = 16)),fp_p = fp_par(text.align="center"))
+    
+    university_par <- fpar(
+      ftext(paste0("n=",UNIVERSITY_N ),prop = fp_text(font.size=16)),fp_p = fp_par(text.align="center") )
+    
+
+    region_name_par <- fpar(
+      ftext(REGION,prop =  fp_text(font.size = 12)),fp_p = fp_par(text.align="center"))
+    
+    region_par <- fpar(
+      ftext(paste0("n=",REGION_N ),prop = fp_text(font.size=12)),fp_p = fp_par(text.align="center") )
+    
+    national_name_par <- fpar(
+      ftext("National",prop =  fp_text(font.size = 12)),fp_p = fp_par(text.align="center"))
+    
+    national_par <- fpar(
+      ftext(paste0("n=",NATIONAL_N ),prop = fp_text(font.size=12)),fp_p = fp_par(text.align="center") )
+  
+    s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, '), Among Students/Other (n=', n_format(nrow(data_school)), ')')
+    s2 <- "Q2. Which of the following best describes you?"
+    s3 <- " Q4. Where do you live?"
+      
+    
+    
+    
+    my_pres <- my_pres %>% on_slide(index=2) %>%
+      ph_with_fpars_at(fpars=list(university_name_par,university_par), 
+                       left=1.5,top=2.5,height=1,width=1.5 ) %>% # this segement adds university n
+      ph_with_fpars_at(fpars=list(region_name_par,region_par), 
+                       left=-.1,top=3.75,height=1,width=1.5 ) %>%  # this segement adds region
+      ph_with_fpars_at(fpars=list(national_name_par,national_par), 
+                       left=-.1,top=2.15,height=1,width=1.5 ) %>%
+      ph_with_fpars_at(fpars=add_sample('', s1, s2, s3), 
+                       left=.25,top=4.85,height=.75,width=9) %>%
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","location_1a.png"), 100/72, 76/72),
+               location = ph_location(top=1.5,left=2.5,width=4,height=3.5)) %>%
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide1b.png"), 100/72, 76/72),
+              location = ph_location(top=1.5,left=5.5,width=4,height=3.5))
+
+    #find_me
+    
+    ####### SLide 3
+    ################################################################################################
+    
+    
+    
+    UNIVERSITY_SAT <- top_two("Q5",data_school)
+    sat_text1 = paste0(UNIVERSITY_SAT, "%")
+    sat_text= " of students are satisfied with their dining program, a"
+    decrease = 11
+    #add decrease or increase function
+    sat_text2 = paste0(" decrease of ", decrease, '% ')
+    sat_text3 = paste0("from ", last_year, '.')
+    #add decrease
+    
+    sat_par = fpar(ftext(sat_text1,prop =  fp_text(font.size = 20)), 
+      ftext(sat_text,prop =  fp_text(font.size = 12)),
+      ftext(sat_text2, prop=fp_text(font.size=12, bold=TRUE)),
+      ftext(sat_text3, prop=fp_text(font.size=12))
+      )
+    
+    my_pres <- my_pres %>% on_slide(index=3) %>%
+      ph_with_fpars_at(fpars=list(sat_par), 
+                       left=.4,top=1.3,height=1,width=2.8 )
+    
+    #66% of students are satisfied with their dining program, a decrease of 7% from Fall 2022.
+    
+    
+    
+    
+  
+     
+     
+     
     print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
     
 }
@@ -635,7 +743,6 @@ my_pres <- my_pres %>%     ph_with_ul(type = "body", index = 1,
                use_loc_size = TRUE )
     
 
-    
 
    
    
@@ -2047,7 +2154,7 @@ par_desc <- fpar(ftext1, ftext2,ftext3)
 
 }
 
-#find_me
+
 
 ###############################################
 ################## Run reports Spring 2023 ######
