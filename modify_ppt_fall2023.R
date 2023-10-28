@@ -299,6 +299,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     
     # Add Sample and Nsize with formatting for numbers 
     UNIVERSITY_N <- n_format(nrow(data_school_c)) # sample size for universty 
+    STUDENT_N <- n_format(nrow(data_school)) 
     REGION_N <- n_format(nrow(data_region_c)) # sample size for this region
     NATIONAL_N <- n_format(nrow(data_c)) # sample size for entire study
     
@@ -325,8 +326,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     s2 <- "Q2. Which of the following best describes you?"
     s3 <- " Q4. Where do you live?"
       
-    
-    
+
     
     my_pres <- my_pres %>% on_slide(index=2) %>%
       ph_with_fpars_at(fpars=list(university_name_par,university_par), 
@@ -342,43 +342,448 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide1b.png"), 100/72, 76/72),
               location = ph_location(top=1.5,left=5.5,width=4,height=3.5))
 
-    #find_me
+
     
     ####### SLide 3
     ################################################################################################
     
     
+    ##### Box 1
     
     UNIVERSITY_SAT <- top_two("Q5",data_school)
     sat_text1 = paste0(UNIVERSITY_SAT, "%")
-    sat_text= " of students are satisfied with their dining program, a"
-    decrease = 11
-    #add decrease or increase function
-    sat_text2 = paste0(" decrease of ", decrease, '% ')
-    sat_text3 = paste0("from ", last_year, '.')
-    #add decrease
+    sat_text2= " of students are satisfied with their dining program"
     
-    sat_par = fpar(ftext(sat_text1,prop =  fp_text(font.size = 20)), 
-      ftext(sat_text,prop =  fp_text(font.size = 12)),
-      ftext(sat_text2, prop=fp_text(font.size=12, bold=TRUE)),
-      ftext(sat_text3, prop=fp_text(font.size=12))
+    if(HAS_LAST){
+      current <- top_two("Q5",data_school)
+      last <- top_two("Q2.1",data_school_last)
+        
+      changed <- ifelse(current < last,'decrease',"increase")
+      changed <- ifelse(current==last,'no change from',changed)
+      
+      if (changed != 'no change from'){
+        sat_text2 <- paste0(sat_text2, ifelse(changed=='increase', ", an ", ', a '))
+        sat_text3 = paste0(changed," of ", roundQual(abs(current-last), 0),  '% ')
+        sat_text4 = paste0("from ", last_year, '.')
+
+      } else{
+        sat_text3 = "the same as"
+        sat_text4 = paste0(last_year, '.')
+      }
+
+     
+      
+    } else{
+      # Set up title 
+      sat_text2 <- paste0(sat_text2, '.')
+      sat_text3 = ''
+      sat_text3 = ''
+      
+    }
+    
+    
+    #top rated metrics
+    questions = c("Q10_1", "Q10_2", "Q10_3", "Q10_4", "Q10_5", "Q10_6", 
+                  "Q10_7", "Q10_9", "Q10_10", "Q10_11", "Q11_1", "Q11_2", "Q11_3", 
+                  "Q11_4", "Q11_5", "Q11_6", "Q11_7", "Q11_8", "Q11_9")
+    q_names = c(" Food quality", " Food variety", " Availability of nutrition information", 
+                " Availability of ingredient/allergen information", " Availability of healthy options", 
+                " Price/Value", " Availability of special dietary options", 
+                " Freshness of food", " Affordability", " Made from sustainably sourced products", 
+                " Convenience", " Welcoming/Friendly staff", " Knowledgeable/Helpful staff", 
+                " Speed of service", " Cleanliness", " Hours of operation", " Place to socialize", 
+                " Comfortable dining experience", " Technology to support dining program")
+    
+    vals <- c()
+    for (q in questions){
+      vals = c(vals,top_two(q,data_school_c))
+    }
+    
+    data_7 <- data.frame(cbind(q_names, vals))
+    data_7$vals <- as.numeric(data_7$vals)
+    data_7 <- data_7 %>% arrange(desc(vals))
+    data_7$pct <- paste0(as.character(data_7$vals), '%')
+    
+    
+    max_agree <- trimws(data_7[ c(1), c('q_names')])
+    per_max_agree <- data_7[ c(1), c('pct')]
+    
+    min_agree <- trimws(data_7[ c(nrow(data_7)), c('q_names')])
+    per_min_agree <- data_7[ c(nrow(data_7)), c('pct')]
+    
+    thumbs_up <- paste0(" is the top rated attribute with a ", per_max_agree ," favorability.")
+    thumbs_down <- paste0(" is the lowest rated attribute with a ", per_min_agree ," favorability.")
+    
+
+    
+    sat_par = fpar(ftext(sat_text1,prop =  fp_text(font.size = 20, bold=TRUE)), 
+      ftext(sat_text2,prop =  fp_text(font.size = 12)),
+      ftext(sat_text3, prop=fp_text(font.size=12, bold=TRUE)),
+      ftext(sat_text4, prop=fp_text(font.size=12))
       )
+    
+    thumbs_up_par = fpar(ftext(max_agree, prop=fp_text(font.size=12, bold=TRUE)), 
+                         ftext(thumbs_up, prop=fp_text(font.size=12)))
+    thumbs_down_par = fpar(ftext(min_agree, prop=fp_text(font.size=12, bold=TRUE)), 
+                         ftext(thumbs_down, prop=fp_text(font.size=12)))
+    
+    ##### Box 2 - Satisfaction with Value
+    #satisfied with the value of the meal plan, 
+    VAL_UNIVERSITY_SAT <- top_two("Q7",data_school)
+    val_sat_text1 = paste0(VAL_UNIVERSITY_SAT, "%")
+    val_sat_text2= " of students are satisfied with the value of the meal plan"
+    
+    if(HAS_LAST){
+      current <- top_two("Q7",data_school)
+      last <- top_two("Q2.4",data_school_last)
+      
+      changed <- ifelse(current < last,'decrease',"increase")
+      changed <- ifelse(current==last,'no change from',changed)
+      
+      if (changed != 'no change from'){
+        val_sat_text2 <- paste0(val_sat_text2, ifelse(changed=='increase', ", an ", ', a '))
+        val_sat_text3 = paste0(changed," of ", roundQual(abs(current-last), 0),  '% ')
+        val_sat_text4 = paste0("from ", last_year, '.')
+        
+      } else{
+        val_sat_text3 = "the same as"
+        val_sat_text4 = paste0(last_year, '.')
+      }
+      
+    } else{
+      val_sat_text2 <- paste0(sat_text2, '.')
+      val_sat_text3 = ''
+      val_sat_text3 = ''
+      
+    }
+    
+    val_sat_par = fpar(ftext(val_sat_text1,prop =  fp_text(font.size = 20, color = "white", bold=TRUE)), 
+                   ftext(val_sat_text2,prop =  fp_text(font.size = 12, color = "white")),
+                   ftext(val_sat_text3, prop=fp_text(font.size=12, bold=TRUE, color = "white")),
+                   ftext(val_sat_text4, prop=fp_text(font.size=12, color = "white")),
+                   fp_p = fp_par(text.align="center"))
+    
+    ##### Box 3 Likelyhood to purchase
+    
+    #only for non-graduating
+    if (ca==F){
+      base_data <- data_school_c%>% filter(Q4 %in% c("Yes")) %>% filter(Q19!="Graduating")
+    } else {
+      base_data <- data_school_c%>% filter(Q4ca %in% c("Yes")) %>% filter(Q19!="Graduating")
+    }
+    
+    pct_by <- top_two("Q17",base_data)
+    buy_text1 = paste0(pct_by, "%")
+    buy_text2= " of students are likely to purchase a meal plan next year."
+    buy_par = fpar(ftext(buy_text1,prop =  fp_text(font.size = 20, bold=T)), 
+                       ftext(buy_text2,prop =  fp_text(font.size = 12)),
+                       fp_p = fp_par(text.align="center"))
+    
+    base <- nrow(base_data) 
+    res_s <- base_data %>%
+      select(dplyr::starts_with("Q20")) %>% select(!dplyr::contains("Q20_9_TEXT")) %>%
+      mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q20")) %>%
+      filter(value!="") %>%
+      mutate(value= gsub(" \\(please specify)","",value)) %>% 
+      group_by(value) %>% summarize(n=100*n()/base)  %>% arrange(desc(n))
+    
+    top_driver <- tolower(res_s[ c(1), c('value')][[1]])
+    per_top <- paste0('At ', roundQual(res_s[ c(1), c('n')][[1]], 1), "%, ")
+    
+    driver_text=' is the largest incentive for improving dining plan participation followed closely by '
+    
+    next_driver <- tolower(res_s[ c(2), c('value')][[1]])
+    third_driver <- tolower(res_s[ c(3), c('value')][[1]])
+    
+    other_drivers= paste0(next_driver, ' and ', third_driver, '.')
+    
+    driver_par = fpar(ftext(per_top,prop =  fp_text(font.size = 12)), 
+                   ftext(top_driver,prop =  fp_text(font.size = 12, bold=T)),
+                   ftext(driver_text,prop =  fp_text(font.size = 12)), 
+                   ftext(other_drivers,prop =  fp_text(font.size = 12, bold=T)),
+                   fp_p = fp_par(text.align="center"))
+    
+    ####### Box 4 : Allergies and intolerances
+    
+    eligible = c('Milk', 'Eggs', 'Peanuts', 'Tree nuts', 'Fish', 'Shellfish', 'Soy', 
+                 'Wheat/Gluten', 'Sesame',  'Other (please specify):')
+    if (ca){
+      eligible = c(eligible, 'Mustard')
+    }
+    
+    
+    res <- data_school %>% filter(Q23_1=="Food allergies or intolerances")%>% 
+      select(dplyr::starts_with("Q24")) %>% select(!dplyr::contains("Q24_11_TEXT")) %>%
+      #select(!dplyr::contains("Q70_SDS")) %>%
+      mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q24")) %>%
+      filter(value!="") %>%
+      group_by(value) %>% summarize(n=100*n()/nrow(data_school))  %>% arrange(desc(n)) %>% 
+      filter(value!='None of the above') %>% 
+      filter(value %in% eligible) %>%
+      arrange(value %in% c("Other (please specify):"))
+    
+    top_allergy <- paste0(tolower(res[ c(1), c('value')][[1]]), '.')
+    
+    eligible = c('Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Paleo/Primal', 'Ketogenic', 'Mediterranean', 'Other (please specify):')
+    if (!ca){
+      eligible = c(eligible, c('Atkins', 'GMO-Free', 'Whole 30', 'Plant-based', 'Other',"Low-FODMAP","Pescatarian"))
+    } else {
+      eligible = c(eligible, c( 'Flexitarian', 'No Peanut/Tree Nut', 'No Dairy', 'No Gluten', 'Other'))
+    }
+    
+    res2 <- data_school %>% filter(Q23_2=="Special dietary lifestyle for religious reasons"|Q23_3=="Special dietary lifestyle for medical reasons"|Q23_4=="Special dietary lifestyle for personal reasons")%>% 
+      select(dplyr::starts_with("Q25")) %>% select(!dplyr::contains("Q25_18_TEXT")) %>%
+      mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q25")) %>%
+      filter(value!="") %>%
+      filter(value %in% eligible) %>%
+      group_by(value) %>% summarize(n=100*n()/nrow(data_school))  %>% arrange(desc(n)) %>% 
+      filter(value!='None of the above') %>% 
+      arrange(value %in% c("Other (please specify):"))
+    
+    
+    top_diet <- res2[ c(1), c('value')][[1]]
+    
+    p_allergy <- paste0(roundQual(sum(data_school$Q23_1=="Food allergies or intolerances")/nrow(data_school)*100,0),"%")
+    allergy_text <- ' of respondents have a food allergy or dietary requirement'
+    
+    
+    allergy_par = fpar(ftext(p_allergy,prop =  fp_text(font.size = 20, bold=T)), 
+                   ftext(allergy_text,prop =  fp_text(font.size = 12)),
+                   fp_p = fp_par(text.align="center"))
+    
+    allergy_text <-"- The most common allergy is "
+    diet_text <-  ' is the most common diet.'
+    
+    
+    
+    diet_block <- block_list(fpar(ftext(allergy_text,prop =fp_text(font.size = 12)), ftext(top_allergy,prop =fp_text(font.size = 12, bold=T))),
+                             fpar( ftext(" ",prop =fp_text(font.size = 12))),
+                             fpar(ftext("- ",prop =fp_text(font.size = 12)), ftext(top_diet,prop =fp_text(font.size = 12, bold=T)), ftext(diet_text,prop =fp_text(font.size = 12)))
+                             )
+
+    
+    ######## Box 5 - Sustainability
+    
+    if (!ca){
+      base <- data_school_c %>% select(dplyr::starts_with("Q30"))  %>% select(!dplyr::contains("Q30ca"))
+      res <- data_school_c %>% select(dplyr::starts_with("Q30")) %>% select(!dplyr::contains("Q30_17_TEXT")) %>%
+        select(!dplyr::contains("Q30_SDS")) 
+    } else {
+      base <- data_school_c %>% select(dplyr::starts_with("Q30ca"))
+      res <- data_school_c %>% select(dplyr::starts_with("Q30ca")) %>% select(!dplyr::contains("TEXT")) %>%
+        select(!dplyr::contains("Q30ca_SDS"))
+    }
+    
+    
+    # how many respondents made some selection for this
+    base_n <- sum(apply(base,MARGIN=1,FUN=function(x){sum(x!="")})!=0)
+    
+    
+    res <- res %>%
+      mutate(id=row.names(.)) %>% pivot_longer(cols=dplyr::starts_with("Q30")) %>%
+      filter(value!="") %>%
+      group_by(value) %>% summarize(n=100*n()/base_n)  %>% arrange(desc(n))%>%
+      arrange(value %in% c("Other (please specify):")) %>% 
+      arrange(value %in% c('None of the above'))
+    
+    top_priority <- res[ c(1), c('value')][[1]]
+    priority_text <- " is the #1 most important initiative to students."
+    
+    priority_par = fpar(ftext(top_priority,prop =  fp_text(font.size = 20, bold=T, color='white')), 
+                       ftext(priority_text,prop =  fp_text(font.size = 12, color='white')),
+                       fp_p = fp_par(text.align="center"))
+    
+    ###### Box 6 -- Technology
+    
+    res <- data.frame(table(data_school_c$Q39)) %>% subset(Var1!="") 
+    base <- sum(res$Freq)
+    res$per <- roundQual(res$Freq*100/base)
+    
+    pct_use <- paste0(res[res$Var1=='Yes',]$per, '%')
+    use_text <- ' of students use the mobile app or self-ordering kiosk.'
+    
+    
+    tech_par1 <- fpar(ftext(pct_use,prop =  fp_text(font.size = 20, bold=T)), 
+         ftext(use_text,prop =  fp_text(font.size = 12)),
+         fp_p = fp_par(text.align="center"))
+    
+    oft <- data_school %>% filter(Q41 !="") %>% group_by(Q41) %>% summarize(n=n()) %>% 
+      mutate(per=paste0(roundQual(100*n/sum(n)),"%")) %>%  complete(Q41=c("0 times / week",  "1-2 times / week", "3-5 times / week",
+                                                                          "6-9 times / week", "10+ times / week"),fill=list(n=0,per="0%")) %>% 
+      mutate(Q41 = factor(Q41,levels=c("0 times / week",  "1-2 times / week", "3-5 times / week",
+                                       "6-9 times / week", "10+ times / week"))) %>%
+      arrange(n)
+    
+    order_val <-  gsub('/', 'per', oft[ c(nrow(oft)), c('Q41')][[1]])
+    order_pct <-oft[ c(nrow(oft)), c('per')][[1]]
+    
+    order_text <- paste0(order_pct, ' order via technology ', order_val, '.')
+    
+    tech_par2 <- fpar(ftext(order_text, prop=fp_text(font.size=12)), fp_p = fp_par(text.align="center"))
+    
+    qs <- c('Q43_1','Q43_4', 'Q43_5', 'Q43_6' )
+    
+    res <- data_school %>% select(qs,ResponseId) %>% 
+      mutate(id=row.names(.)) %>% 
+      select(!dplyr::contains("_SDS")) %>%
+      pivot_longer(cols=dplyr::starts_with("Q43")) %>%
+      filter(value!="") %>%
+      mutate(value = trimws(value)) %>%
+      select(-id) %>%
+      group_by(value) %>%
+      summarize(count = n()) %>%
+      ungroup() %>%
+      mutate(sum_t = sum(count)) %>%
+      arrange(desc(count))
+    
+    reason <- res[ c(1), c('value')][[1]]
+    #tidy reason to sentence form
+    reason <- ifelse(reason=='I prefer to order in person', 'Preferring to order in person', reason)
+    reason <- ifelse(reason=='I do not want to pay a transaction fee in the mobile app', 'The transaction fee', reason)
+    reason <- ifelse(reason=='I have no interest in ordering via a mobile app or self-ordering kiosk', 'Lack of interest', reason)
+  
+    reason_text <- " is the biggest barrier for those not ordering via technology."
+    
+    tech_par3 <- fpar(ftext(reason, prop=fp_text(font.size=12, bold=T)),
+                      ftext(reason_text, prop=fp_text(font.size=12)), fp_p = fp_par(text.align="center"))
+    
+    
+    
     
     my_pres <- my_pres %>% on_slide(index=3) %>%
       ph_with_fpars_at(fpars=list(sat_par), 
-                       left=.4,top=1.3,height=1,width=2.8 )
+                       left=.4,top=1.3,height=1,width=2.8 ) %>%
+      ph_with_fpars_at(fpars= list(thumbs_up_par),
+                       left=.7,top=2.2,height=.5,width=2.6 ) %>%
+      ph_with_fpars_at(fpars= list(thumbs_down_par),
+                       left=.7,top=2.7,height=.5,width=2.6 ) %>%
+      ph_with_fpars_at(fpars= list(val_sat_par),
+                       left=3.7,top=1.9,height=.5,width=2.6 ) %>%
+      ph_with_fpars_at(fpars= list(buy_par),
+                       left=6.85,top=1.3,height=.75,width=2.9 ) %>%
+      ph_with_fpars_at(fpars= list(driver_par),
+                       left=6.85,top=2,height=1,width=2.9 ) %>%
+      ph_with_fpars_at(fpars=list(allergy_par), 
+                       left=.4,top=3.7,height=1,width=2.8 ) %>%
+      ph_with(type = "body",
+                 diet_block,
+                 level_list = c(1L,1L),
+                 style = fp_text( font.size = 12),
+                 location = ph_location(left=.45,width=2.6,top=4.5, height=2))%>%
+      ph_with_fpars_at(fpars= list(priority_par),
+                       left=3.7,top=4.1,height=1,width=2.6 ) %>%
+      ph_with_fpars_at(fpars=list(tech_par1), 
+                       left=6.85,top=3.7,height=1,width=2.8 ) %>%
+      ph_with_fpars_at(fpars= list(tech_par2),
+                       left=6.85,top=4.3,height=.5,width=2.6 ) %>%
+      ph_with_fpars_at(fpars= list(tech_par3),
+                       left=6.85,top=4.8,height=.5,width=2.6 )
+      
+    ####### SLide 4
+    ################################################################################################
+    current <- top_two("Q5",data_school)
+    market <- top_two("Q5",data_market)
     
-    #66% of students are satisfied with their dining program, a decrease of 7% from Fall 2022.
+    comparator <- ifelse(current-market>0, 'higher than', 'lower than')
+    comparator <- ifelse(abs(current-market)<5, 'about the same as', comparator)
     
     
     
-    
+    if (HAS_LAST){
+      last <- top_two("Q2.1",data_school_last)
+          
+      decline <- (last - current)>5
+      increase <- (current- last)>5
+      
+      prefix <- ifelse(decline & comparator != 'lower than', 'Despite decline,', 'Remaining about the same as last year,')
+      prefix <- ifelse(decline & comparator == 'lower than', 'Declining from last year,', prefix)
+      prefix <- ifelse(increase & comparator != 'lower than', 'Increasing from last year,,', prefix)
+      prefix <- ifelse(increase & comparator == 'lower than', 'Despite increase,', prefix)
   
-     
-     
-     
-    print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
+      title <- paste0(prefix, " students rate overall experience ", comparator, " comparable segments." )
     
+    } else {
+      
+      title <- paste0( "Students rate overall experience ", comparator, " comparable segments." )
+      
+    }
+    
+    
+    title_par <- fpar(
+                 ftext(title,
+                fp_text( font.size = 21)))
+    
+    s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, ')')
+    s2 <- "Q5. Overall, how would you rate your campus dining program?"
+   
+    
+    my_pres <- my_pres %>% on_slide(index=4) %>%
+      ph_with_fpars_at(fpars=list(title_par), 
+                       left=.25,top=.25,height=.75,width=9.5 )%>%
+      ph_with_fpars_at(fpars=add_sample('', "", s1, s2), 
+                       left=.25,top=4.75,height=.75,width=9) %>%       
+    ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide4a.png"), 100/72, 76/72),
+           location = ph_location(top=1.5,left=.5,width=3,height=3)) %>%
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide4b.png"), 100/72, 76/72),
+              location = ph_location(top=1.5,left=4.5,width=5,height=3))
+    
+
+    ########################## Slide 5 #
+    s1 <-  paste0('Among Total Respondents (n=', UNIVERSITY_N, ')')
+    s2 <- "Q13 Please rate your satisfaction with the following dining locations."
+    
+    
+    my_pres <- my_pres %>% on_slide(index=5) %>%
+      ph_with_fpars_at(fpars=add_sample('', "", s1, s2), 
+                       left=.25,top=4.6,height=.75,width=9) %>%
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide5.png"), 100/72, 76/72),
+              location = ph_location(top=.8,left=1.5,width=6,height=4))
+    
+    
+    ########################## Slide 6 #
+    s1 <-  paste0('Among Student Respondents (n=', STUDENT_N, ')')
+    s2 <- "Q7. How would you rate the value you receive when dining on campus?"
+    s3 <- "Q9. Which statement below best describes how you value a meal?"
+    
+    driver_df  <- data_school%>% group_by(Q9) %>% summarize(n=n()) %>% arrange(desc(n))
+    
+    
+    clean_value <- function(value){
+      clean <- ifelse(value=='Value to me is about the quality of the food', 'quality', '')
+      clean <- ifelse(value=='Value to me is about the overall experience', 'overall experience', clean)
+      clean <- ifelse(value=='Value to me is about how much I pay', 'cost', clean)
+      clean <- ifelse(value=='	Value to me is about how much food I receive', 'quantity', clean)
+    return(clean)
+     }
+    
+
+    title6 <- paste0("Main drivers of value rating are ", clean_value(driver_df[c(1), c('Q9')][[1]]), ' and ',clean_value(driver_df[c(2), c('Q9')][[1]]) , '.')
+
+    
+
+    
+    title_6_par <- fpar(
+      ftext(title6, fp_text( font.size = 22)))
+  
+    
+    my_pres <- my_pres %>% on_slide(index=6) %>%
+      ph_with_fpars_at(fpars=list(title_6_par), 
+                       left=.25,top=.25,height=.75,width=9.5 ) %>%
+      ph_with_fpars_at(fpars=add_sample('', s1, s2, s3), 
+                       left=.25,top=4.75,height=.75,width=9) %>%
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide6a.png"), 100/72, 76/72),
+              location = ph_location(top=1.5,left=.5,width=3.5,height=3.5)) %>%
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide6b.png"), 100/72, 76/72),
+              location = ph_location(top=1.5,left=5,width=3.5,height=3.5))
+    
+    
+    
+    
+    print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
+    #find_me
+    
+    
+    #
 }
 
 run_report(data, data_last, 'University of Virginia', last_year='Spring 2023')
