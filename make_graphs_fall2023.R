@@ -77,13 +77,6 @@ last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
 data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
-
-# merge in names
-#TODO sarah to get outlest file
-#outlets <- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Spring2023_outlets.csv")
-outlets <- read.csv("Fall2022_outlets.csv")
-
-
 ## Fix names 
 data$SCHOOL_NAME <- ifelse(data$Q0=="USA",data$Q1_USA, data$Q1_CAN)
 
