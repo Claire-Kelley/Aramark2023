@@ -457,7 +457,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
           legend.margin=margin(t = 0, unit='cm')) 
   
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","location_1a.png"),plot=plot21b,width = 4, height=4,units="in")
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","location_2a.png"),plot=plot21b,width = 4, height=4,units="in")
   
   # graph 2 - location pie chart
   g2 <- data_school %>% group_by(Q3) %>% summarize(count=n())
@@ -477,19 +477,134 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   # Compute a good label
   g2$label <- paste0(round(g2$count*100/sum(g2$count)))
   
+  # wrap legend
+  g2$Q3 <- unlist(lapply(  g2$Q3,FUN=function(x){paste(strwrap(x,20),collapse="\n")}))
+  
   # Make the plot
   pie <- ggplot(g2, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Q3)) +
     geom_rect() +
-    geom_label( x=3.5, aes(y=labelPosition, label=label), size=6) +
+    geom_text( x=3.5, aes(y=labelPosition, label=paste0(label,"%"),color=Q3), size=6,show.legend = FALSE) +
     scale_fill_manual(values=three_tone)+
+    scale_color_manual(values=c("white","black","white"))+
     coord_polar(theta="y") +
     xlim(c(2, 4)) +
     theme_void() +
-    theme(legend.position = "none")
+    theme(legend.position = "bottom" , legend.title = element_blank(),legend.spacing.y = unit(1.0, 'cm'), legend.key.height = unit(.5, 'cm')) 
+
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","commuting_2b.png"),plot=pie,width = 4, height=4,units="in")
+  
   
   ################## Slide 2 ##############
   
   ##################
+  
+  ##################### Slide 4 ########### #
+  top_two <- function(x,dataset){
+    roundQual(100*sum(grepl("excellent|good|^agree|strongly agree|definitely will buy|probably will buy",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
+  }
+  
+  
+  
+  if (HAS_LAST){
+    sat <- data_grp_bar('Q5', stacked_labels=TRUE,comp=T)
+    sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
+    sat_this$top2 <- paste0("\nTop Two Box: ",top_two("Q5",data_school_c),"%")
+    sat_this$year <- this_year
+    sat_this$year <- paste0(sat_this$year,sat_this$top2)
+    
+    # FLAG : will need to change this after 2023 when old data is not consisten
+    sat_last <- data_grp_bar('Q2.1', stacked_labels=TRUE,uselast = T) %>% filter(!Location%in%c("Region", "Nation"))
+    sat_last$year <- last_year
+    sat_last$top2 <- paste0("\nTop Two Box: ",top_two("Q2.1",data_school_c_last),"%")
+    sat_last$year <- paste0(sat_last$year,sat_last$top2)
+    names(sat_last) <- gsub("Q2.1","Q5",names(sat_last),fixed=T)
+    names(sat_last)[6] <- "Value"
+    
+    sat <- bind_rows(sat_this,sat_last)
+    sat$hjust_var <- ifelse(sat$Percent<=4,-3.6,.5)
+    sat$Value <- sat$Q5
+    
+    years <- c(unique(sat_last$year),unique(sat_this$year))
+    
+  } else{
+    sat <- data_grp_bar('Q5', stacked_labels=TRUE,comp=T)
+    sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
+    sat$year <- this_year
+    sat$top2 <- paste0("\nTop Two Box: ",top_two("Q5",data_school_c),"%")
+    sat$year <- paste0(sat$year,sat$top2)
+    sat$hjust_var <- ifelse(sat$Percent<=4,-6.2,.5) 
+    years <- unique(sat$year)
+  }
+  
+  sat$Value <- as.factor(sat$Q5)
+  sat$label_col <- ifelse(sat$Value %in% c("Excellent","Good"),"black","white")
+  
+  #adust label color if it is off the side to be black
+  sat$label_col <- ifelse(sat$Percent<=4,'black', sat$label_col)
+  
+  sat$Q5 <- gsub("Average","Fair",sat$Q5) # correct for language change
+  
+  sat$Value <- factor(sat$Q5, levels <- c( "Excellent", "Good","Fair", "Poor", 
+                                              "Terrible"))
+  
+  
+  sat$year <- factor(sat$year,levels=years)
+  
+  sat_plot<- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
+    geom_bar(stat="identity",width=.5)+ 
+    geom_text_repel(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
+    scale_x_discrete(position = "top")  + 
+    scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Fair","Poor","Terrible"))) +
+    scale_color_manual(values=c("black","white"))+
+    theme_minimal() + ylab("") + xlab("") + 
+    theme(panel.grid = element_blank(),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          axis.text.x=element_text(size=13),
+          legend.text=element_text(size=13),
+          # legend.position = "left", 
+          plot.margin = margin(l=.7, unit="cm"),
+          legend.position=c(0.01,0.5),
+          legend.margin=margin(t = 0, unit='cm')) + guides(color="none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","sat_4a.png"),plot=sat_plot,width = 7, height=4.5,units="in")
+  
+  ################ satisfaction compariosn
+  
+  sat <- data_grp_bar('Q5', appendix=TRUE, stacked_labels=TRUE,comp=T) %>% filter(Location!="Market Segment")
+  sat$Value <- as.factor(sat$Q5)
+  sat$label_col <- ifelse(sat$Value %in% c("Excellent","Good"),"black","white")
+  sat$hjust_var <- ifelse(sat$Percent<=4,-1.6,.5)
+  #adust label color if it is off the side to be black
+  sat$label_col <- ifelse(sat$Percent<=4,'black', sat$label_col)
+  sat$Value <- factor(sat$Value, levels <- c( "Excellent", "Good","Fair", "Poor", 
+                                              "Terrible"))
+  
+  sat$Location <- factor(sat$Location,levels=c(UNIVERSITY_NAME_WRAP,"Region", "Nation"))
+  
+  
+  
+  plot10 <- ggplot(sat,aes(x=Location,y=Percent,fill=Value,label=label)) + 
+    geom_bar(stat="identity",width=.5)+ 
+    geom_text_repel(aes(x=Location,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,
+                    size = 4, position = position_stack(vjust = 0.5),segment.alpha=0,segment.color= "white") +
+    scale_x_discrete(position = "top")  + 
+    scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Fair","Poor","Terrible"))) +
+    scale_color_manual(values=c("black","white"))+
+    theme_minimal() + ylab("") + xlab("") + 
+    theme(panel.grid = element_blank(),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          # legend.position = "left", 
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent",colour = NA),
+          plot.margin = margin(l=1,r=.1, unit="cm"),
+          legend.position=c(0.01,0.5),
+          legend.margin=margin(t = 0, r = .7, unit='cm')) + guides(color=F)
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","sat_4b.png"),plot=plot10,width = 7, height=4.5,units="in")
+  
+  
+  
   
 } 
 
