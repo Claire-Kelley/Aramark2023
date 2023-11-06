@@ -14,8 +14,8 @@ library(htmlwidgets)
 #webshot::install_phantomjs()
 
 
-#setwd("~/Consulting/Qualtrics/Aramark2022/Fall 2022")
-setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark2023")
+setwd("~/Documents/Consulting/Qualtrics/Aramark2022/Fall 2022")
+#setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark2023")
 
 #colors <- c("#750015","#595959","#ff91a3","#bfbfbf","#c00000")
 #colors <- c("#8C0019","#EA0022","#999999")
@@ -36,9 +36,7 @@ roundQual <- function(x,n){floor(x+.5)}
 last_path <- 'data_files'
 ### 
 
-#last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
-#TODO: sarah to get file
-last_data <- read.csv(paste0(last_path,"/spring2023_temp.csv"),stringsAsFactors=FALSE)
+last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
 
 last_data <- last_data[3:nrow(last_data),]
 
@@ -261,18 +259,21 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
       group_by_(col) %>%
       summarise(n = n()) %>%
       subset(.[,1]!="") %>%
+      subset(.[,1]!="N/A or Don't Know") %>%
       mutate(freq = n / sum(n))
     
     data_temp_school <- data_school %>%
       group_by_(col) %>%
       summarise(n = n()) %>%
       subset(.[,1]!="") %>%
+      subset(.[,1]!="N/A or Don't Know") %>%
       mutate(freq = n / sum(n))
     
     data_temp_region <- data_region %>%
       group_by_(col) %>%
       summarise(n = n()) %>%
       subset(.[,1]!="") %>%
+      subset(.[,1]!="N/A or Don't Know") %>%
       mutate(freq = n / sum(n))
     
     # now if a level is mising from region or school add it
@@ -310,6 +311,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
         group_by_(col) %>%
         summarise(n = n()) %>%
         subset(.[,1]!="") %>%
+        subset(.[,1]!="N/A or Don't Know") %>%
         mutate(freq = n / sum(n))
       
       market_levels <- levels[!levels %in% data_temp_market[,1,drop=T]]
@@ -449,9 +451,13 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
     
   }
   
+  top_two <- function(x,dataset){
+    roundQual(100*sum(grepl("excellent|good|^agree|strongly agree|definitely will buy|probably will buy",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
+  }
+  
   ############ NEW GRAPHS 
   
-  ################## Slide 1 ##############
+  ################## Slide 2 ##############
   
   year<- data_grp_bar('Q2',comp=T)
   year <-year %>% filter(Location==UNIVERSITY_NAME)
@@ -528,14 +534,12 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","commuting_2b.png"),plot=pie,width = 4, height=4,units="in")
   
   
-  ################## Slide 2 ##############
+  ################## Slide 3 ##############
   
   ##################
  
   ##################### Slide 4 ########### #
-  top_two <- function(x,dataset){
-    roundQual(100*sum(grepl("excellent|good|^agree|strongly agree|definitely will buy|probably will buy",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
-  }
+
   
   
   
@@ -586,7 +590,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   sat_plot<- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
     geom_bar(stat="identity",width=.5)+ 
-    geom_text_repel(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
+    geom_text(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
     scale_x_discrete(position = "top")  + 
     scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Fair","Poor","Terrible"))) +
     scale_color_manual(values=c("black","white"))+
@@ -619,7 +623,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   plot10 <- ggplot(sat,aes(x=Location,y=Percent,fill=Value,label=label)) + 
     geom_bar(stat="identity",width=.5)+ 
-    geom_text_repel(aes(x=Location,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,
+    geom_text(aes(x=Location,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,
                     size = 4, position = position_stack(vjust = 0.5),segment.alpha=0,segment.color= "white") +
     scale_x_discrete(position = "top")  + 
     scale_fill_manual(values=colors,labels=paste(" ",c("Excellent","Good","Fair","Poor","Terrible"))) +
@@ -656,8 +660,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   sat_4 <- sat %>% filter(!Location%in%c("Region", "Nation"))
   sat_4$q <- "Coffee Shops"
   names(sat_4)[1] <- 'Q13'
-  
-  
+
   
   sat <- bind_rows(sat_1, sat_2, sat_3, sat_4)
   sat$hjust_var <- ifelse(sat$Percent<=4,-2.4,.5)
@@ -699,7 +702,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   ################## Slide 6a Value Rating
   ## These are just students
   if (HAS_LAST){
-    sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=T)
+    sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=F)
     sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
     sat_this$year <- this_year
     sat_this$Value <- sat_this$Q7
@@ -711,7 +714,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
     sat$hjust_var <- ifelse(sat$Percent<=4,-2.4,.5)
     years <- c(unique(sat_last$year),unique(sat_this$year))
   } else{
-    sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=T)
+    sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=F)
     sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
     sat$year <- this_year
     sat$hjust_var <- ifelse(sat$Percent<=4,-4.4,.5)
@@ -755,7 +758,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   
   ################## Slide 6b Meaning of Value, region/nation
-  meaning <- data_grp_bar('Q9',comp=T)
+  meaning <- data_grp_bar('Q9',comp=F)
   
   #clean up the text answers
   meaning$Value <- gsub('Value to me is about ', '', meaning$Q9)
@@ -896,7 +899,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   if (!is_ca){
     if ( HAS_LAST){
-      sat <- data_grp_bar('Q17', stacked_labels = TRUE,filter_enr=T)
+      sat <- data_grp_bar('Q17', stacked_labels = TRUE,filter_enr=T, comp=T)
       sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
       sat_this$year <- this_year
       sat_this$Value <- sat_this$Q17
@@ -1015,8 +1018,8 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   }
   
   
-
-  #Slide 9a
+  ##############################################
+  #### Slide 9a
   ## this is for all repsondents 
   
   eligible = c('Milk', 'Eggs', 'Peanuts', 'Tree nuts', 'Fish', 'Shellfish', 'Soy', 

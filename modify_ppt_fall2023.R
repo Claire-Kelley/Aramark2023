@@ -91,9 +91,7 @@ roundQual <- function(x,n){floor(x+.5)}
 last_path <- 'data_files'
 ### 
 
-#last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
-#TODO: sarah to get file
-last_data <- read.csv(paste0(last_path,"/spring2023_temp.csv"),stringsAsFactors=FALSE)
+last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
 
 last_data <- last_data[3:nrow(last_data),]
 
@@ -132,11 +130,6 @@ last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
 data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
-
-# merge in names
-#TODO sarah to get outlest file
-#outlets <- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Spring2023_outlets.csv")
-outlets <- read.csv("Fall2022_outlets.csv")
 
 
 ## Fix names 
@@ -336,10 +329,10 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
                        left=-.1,top=2.15,height=1,width=1.5 ) %>%
       ph_with_fpars_at(fpars=add_sample('', s1, s2, s3), 
                        left=.25,top=4.85,height=.75,width=9) %>%
-      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","location_1a.png"), 100/72, 76/72),
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","location_2a.png"), 100/72, 76/72),
                location = ph_location(top=1.5,left=2.5,width=4,height=3.5)) %>%
-      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide1b.png"), 100/72, 76/72),
-              location = ph_location(top=1.5,left=5.5,width=4,height=3.5))
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","commuting_2b.png"), 100/72, 76/72),
+              location = ph_location(top=1.35,left=6.2,width=3.5,height=3.5))
 
 
     
@@ -724,9 +717,9 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
                        left=.25,top=.25,height=.75,width=9.5 )%>%
       ph_with_fpars_at(fpars=add_sample('', "", s1, s2), 
                        left=.25,top=4.75,height=.75,width=9) %>%       
-    ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide4a.png"), 100/72, 76/72),
+    ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","sat_4a.png"), 100/72, 76/72),
            location = ph_location(top=1.5,left=.5,width=3,height=3)) %>%
-      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide4b.png"), 100/72, 76/72),
+      ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","sat_4b.png"), 100/72, 76/72),
               location = ph_location(top=1.5,left=4.5,width=5,height=3))
     
 
