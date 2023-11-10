@@ -14,7 +14,7 @@ library(htmlwidgets)
 #webshot::install_phantomjs()
 
 
-setwd("~/Documents/Consulting/Qualtrics/Aramark2022/Fall 2022")
+#setwd("~/Documents/Consulting/Qualtrics/Aramark2022/Fall 2022")
 #setwd("/Users/sarahkelley/Documents/Consulting/Kelley&Kelley/Aramark2023")
 
 #colors <- c("#750015","#595959","#ff91a3","#bfbfbf","#c00000")
@@ -110,10 +110,7 @@ all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %i
 
 
 
-#for working
-UNIVERSITY_NAME <-  "University of Virginia"
-data_last <- last_data
-last_year ="Spring 2023"
+
 
 
 
@@ -143,9 +140,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   
   
-  # make student only data set 
-  #CLAIRE
-  #TOCHECK: Are we sure we want all the others? to me thsoe don't seem like students in either data set
+
   data_c <- data 
   
   data <- data %>% filter(grepl("student|Other",Q2))
@@ -183,14 +178,12 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
 
   if (REGION == 'East Region'){
     data_region_c_last <- filter(data_c_last, REGION_NAME%in%c("East","East Region")) # in some years east, some east region
-    data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
   } else{
-    
     data_region_c_last <- filter(data_c_last, REGION_NAME==REGION)
-    data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
+    
     
   }
-
+  data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
 
   #get market segment
   market_seg <- data %>% filter(SCHOOL_NAME== UNIVERSITY_NAME) %>% 
@@ -458,7 +451,6 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   ############ NEW GRAPHS 
   
   ################## Slide 2 ##############
-  
   year<- data_grp_bar('Q2',comp=T)
   year <-year %>% filter(Location==UNIVERSITY_NAME)
   year$Q2 <- gsub(" (please specify)","",year$Q2,fixed=T)
@@ -498,41 +490,77 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","location_2a.png"),plot=plot21b,width = 4, height=4,units="in")
   
-  # graph 2 - location pie chart
-  g2 <- data_school %>% group_by(Q3) %>% summarize(count=n())
   
-  # Compute percentages
-  g2$fraction <- g2$count / sum(g2$count)
   
-  # Compute the cumulative percentages (top of each rectangle)
-  g2$ymax <- cumsum(g2$fraction)
+  #find_me
   
-  # Compute the bottom of each rectangle
-  g2$ymin <- c(0, head(g2$ymax, n=-1))
+  # graph 2, US - location pie chart
+  #CA, location bar graph
   
-  # Compute label position
-  g2$labelPosition <- (g2$ymax + g2$ymin) / 2
-  
-  # Compute a good label
-  g2$label <- paste0(round(g2$count*100/sum(g2$count)))
-  
-  # wrap legend
-  g2$Q3 <- unlist(lapply(  g2$Q3,FUN=function(x){paste(strwrap(x,20),collapse="\n")}))
-  
-  # Make the plot
-  pie <- ggplot(g2, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Q3)) +
-    geom_rect() +
-    geom_text( x=3.5, aes(y=labelPosition, label=paste0(label,"%"),color=Q3), size=6,show.legend = FALSE) +
-    scale_fill_manual(values=three_tone)+
-    scale_color_manual(values=c("white","black","white"))+
-    coord_polar(theta="y") +
-    xlim(c(2, 4)) +
-    theme_void() +
-    theme(legend.position = "bottom" , legend.title = element_blank(),legend.spacing.y = unit(1.0, 'cm'), legend.key.height = unit(.5, 'cm')) 
-
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","commuting_2b.png"),plot=pie,width = 4, height=4,units="in")
-  
+  if (!is_ca){
+    g2 <- data_school %>% group_by(Q3) %>% summarize(count=n())
+    
+    # Compute percentages
+    g2$fraction <- g2$count / sum(g2$count)
+    
+    # Compute the cumulative percentages (top of each rectangle)
+    g2$ymax <- cumsum(g2$fraction)
+    
+    # Compute the bottom of each rectangle
+    g2$ymin <- c(0, head(g2$ymax, n=-1))
+    
+    # Compute label position
+    g2$labelPosition <- (g2$ymax + g2$ymin) / 2
+    
+    # Compute a good label
+    g2$label <- paste0(round(g2$count*100/sum(g2$count)))
+    
+    # wrap legend
+    g2$Q3 <- unlist(lapply(  g2$Q3,FUN=function(x){paste(strwrap(x,20),collapse="\n")}))
+    
+    # Make the plot
+    pie <- ggplot(g2, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Q3)) +
+      geom_rect() +
+      geom_text( x=3.5, aes(y=labelPosition, label=paste0(label,"%"),color=Q3), size=6,show.legend = FALSE) +
+      scale_fill_manual(values=three_tone)+
+      scale_color_manual(values=c("white","black","white"))+
+      coord_polar(theta="y") +
+      xlim(c(2, 4)) +
+      theme_void() +
+      theme(legend.position = "bottom" , legend.title = element_blank(),legend.spacing.y = unit(1.0, 'cm'), legend.key.height = unit(.5, 'cm')) 
+    
+    
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","commuting_2b.png"),plot=pie,width = 4, height=4,units="in")
+    
+  } else{
+    
+    oncamp<- data_grp_bar('Q3',comp=T)
+    oncamp <- oncamp%>% filter(Location==UNIVERSITY_NAME)
+    oncamp$Value <- gsub("walking distance","walking\ndistance",oncamp$Q3,fixed=T)
+    oncamp$Value <- gsub("drive or take public transportation","drive\npublic transportation",oncamp$Value,fixed=T)
+    oncamp$Value <- factor(oncamp$Value,levels = rev(c("On campus", "Off campus (walking\ndistance)", "Off campus (drive\npublic transportation)")))
+    
+    plot21c<-
+      ggplot(oncamp,aes(x=Value,y=Percent,label=label)) + 
+      geom_bar(stat="identity",fill=two_tone[1],width = .8)+ 
+      geom_text(aes(x=Value,y=Percent + max(Percent)/7,label=label),size = 4, position = position_dodge(width = .9)) +
+      coord_flip() + 
+      theme_minimal() + ylab("") + xlab("") +
+      scale_y_continuous(limits = c(0,max(oncamp$Percent)+max(oncamp$Percent)/7+10), expand=c(0,0)) +
+      theme(panel.grid = element_blank(),
+            axis.line.y =  element_line(color = "grey"),
+            axis.text.x = element_blank(), legend.title = element_blank(),
+            # legend.position = "bottom", 
+            legend.position=c(0.4,-0.03),
+            legend.margin=margin(t = 0, unit='cm')) 
+    
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide21c.png"),plot=plot21c,width = 4, height=4,units="in")
+    
+    
+    
+    
+  }
+   
   
   ################## Slide 3 ##############
   
@@ -701,7 +729,8 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
 
   ################## Slide 6a Value Rating
   ## These are just students
-  if (HAS_LAST){
+  # CA never has the past results even if they exist
+  if (HAS_LAST & !is_ca){
     sat <- data_grp_bar('Q7', stacked_labels=TRUE,comp=F)
     sat_this <- sat %>% filter(!Location%in%c("Region", "Nation"))
     sat_this$year <- this_year
@@ -719,6 +748,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
     sat$year <- this_year
     sat$hjust_var <- ifelse(sat$Percent<=4,-4.4,.5)
     years <- unique(sat$year)
+    sat$Value <- sat$Q7
     
   }
   #match previous categories to current categories
@@ -753,7 +783,13 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
           legend.text = element_text(size = 13),
           legend.margin=margin(t = 0, unit='cm')) + guides(color="none")
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide6a.png"),plot=plot6a,width = 5, height=4.5,units="in")
+  if(!is_ca){
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide6a.png"),plot=plot6a,width = 5, height=4.5,units="in")
+  } else{
+    #for canada this is slide 3b
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide3b.png"),plot=plot6a,width = 5, height=4.5,units="in")
+    
+  }
   
   
   
@@ -1409,8 +1445,18 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
 
 
 
-get_graphs(data, data_last, 'University of Virginia')
+data_ca <- data[data$Q0=="Canada",]
+data_us <- data[data$Q0=="USA",]
 
+#for working
+UNIVERSITY_NAME <-  "University of Virginia"
+data_last <- last_data[last_data$COUNTRY=='USA',]
+last_year ="Spring 2023"
+
+
+get_graphs(data_us, data_last, 'University of Virginia')
+
+#make sure when we apply this we are correctly supplying the last year's data only for the correct country
 
 
 
