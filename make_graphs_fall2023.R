@@ -3438,7 +3438,7 @@ ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slideLocationSat.png"),plot=pl
   
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide21b.png"),plot=plot21b,width = 4, height=4,units="in")
   
-   ## slide 21c the table
+   ## sl     ide 21c the table
   oncamp<- data_grp_bar('Q1.5',comp=T)
   oncamp <- oncamp%>% filter(Location==UNIVERSITY_NAME)
   oncamp$Value <- gsub("walking distance","walking\ndistance",oncamp$Q1.5,fixed=T)
