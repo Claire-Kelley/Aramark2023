@@ -316,7 +316,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
   
     s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, '), Among Students/Other (n=', n_format(nrow(data_school)), ')')
     s2 <- "Q2. Which of the following best describes you?"
-    s3 <- " Q4. Where do you live?"
+    s3 <- " Q3. Where do you live?"
       
 
     
@@ -907,7 +907,6 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     
     eligible  <- data_school_c%>% filter(Q4 %in% c("Yes")) %>% filter(Q19!="Graduating")
     
-    #find_me
     
     s1 <-  paste0('Among Total Respondents/ Who Participate Even Though It Is Not Required (n=', UNIVERSITY_N, ',',n_part,'), Who Plan to be On Campus Next Year (n=', nrow(eligible), ')')
     s2 <- "Q15. Which of the following best describes your current participation in your school's meal plan?"
