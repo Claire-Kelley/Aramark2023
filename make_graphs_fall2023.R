@@ -1282,7 +1282,11 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
                        name = "", breaks = NULL, labels = NULL) +
     theme_minimal() + guides(fill="none")
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11a.png"),plot=hasMobile,width = 3.7, height=3.7,units="in")
+  if (!is_ca){
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11a.png"),plot=hasMobile,width = 3.7, height=3.7,units="in")
+  } else{
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11c_ca.png"),plot=hasMobile,width = 3.7, height=3.7,units="in")
+  }
   
   
   ####### Slide 11b How Often Mobile
@@ -1325,8 +1329,12 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
         rows = c(2,4))
     ) 
   
+  if (!is_ca){
+    gtsave(oft_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide11b.png"))
+  } else {
+    gtsave(oft_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide10d_ca.png"))
+  }
   
-  gtsave(oft_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide11b.png"))
   
   
   
@@ -1405,7 +1413,12 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
         rows = c(1,3))
     ) 
   
-  gtsave(not_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide11c.png"))
+  if (!is_ca){
+    gtsave(not_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide11c.png"))
+  } else{
+    gtsave(not_out,filename = paste0(loc,UNIVERSITY_NAME,"/","slide10e_ca.png"))
+  }
+  
   
 
   
@@ -1460,15 +1473,19 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
           legend.position=c(0.4,-0.03),
           legend.margin=margin(t = 0, unit='cm')) 
   
-  
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11d.png"),plot=plotTech,width = 4, height=3.5,units="in")
+  if (!is_ca){
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11d.png"),plot=plotTech,width = 4, height=3.5,units="in")
+  } else{
+    ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11b_ca.png"),plot=plotTech,width = 4, height=3.5,units="in")
+    
+  }
   
   
   
   ######################################################################################
   # bank of canada only visualizations
   
-  #find_me
+
 
   if (is.ca){
     
@@ -1741,7 +1758,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide7a_ca.png"),plot=hasDiet,width = 3.7, height=3.7,units="in")
   
   #######################################################
-  ### Slide 8:  More about died
+  ### Slide 8:  More about diet
   #######################################################
   #Q27 Ease of meeting dietary restrictions
   sat <- data_grp_bar('Q27', stacked_labels=TRUE,comp=T)
@@ -1908,7 +1925,179 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
   
   ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide9_ca.png"),plot=plotPrior,width = 8.5, height=4,units="in")
   
+  ########################################################################
+  # Slide 10: Additional Mobile-related graphs
+  ########################################################################
   
+  #campus has mobile kiosk
+  
+  res <- data.frame(table(data_school_c$Q39)) %>% subset(Var1!="") 
+  base <- sum(res$Freq)
+  res$per <- roundQual(res$Freq*100/base)
+  res <- res %>% 
+    arrange(Var1=="No") %>% 
+    mutate(label=paste0(Var1,": " ,per,"%"))
+  
+  # create labels
+  # res$label_col <- ifelse(res$per<=4,'black', "white")
+  res$label_col <-"black"
+  res$hjust_var <- ifelse(res$per<=4,-2.5,.5)
+  res$Var1 <- factor(res$Var1,levels=c("Yes","No"))
+  
+  
+  df <- res %>% 
+    mutate(end = 2 * pi * cumsum(per)/sum(per),
+           start = lag(end, default = 0),
+           middle = 0.5 * (end+start),
+           hjust = ifelse(middle > pi, 1, 0),
+           vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+  
+  df$label_x <-  1.05 * sin(df$middle)
+  df$label_y <- 1.05 * cos(df$middle)
+  
+  hasKiosk<-  ggplot(df) + 
+    geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1,
+                     start = start, end = end, fill = Var1)) +
+    geom_text(aes(x =label_x, y = label_y, label = label,
+                  hjust = hjust, vjust = vjust)) +
+    scale_fill_manual(values=colors[c(5,3)],breaks=c("Yes","No")) + 
+    coord_fixed() +
+    scale_x_continuous(limits = c(-1.6, 1.6),  # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    scale_y_continuous(limits = c(-1.5, 1.5),    # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    theme_minimal() + guides(fill="none") 
+  
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide10a_ca.png"),plot=hasKiosk,width = 3.5, height=3.5,units="in")
+  
+  #would order from mobile if existed
+  
+  no_mobile <- data_school_c %>% filter(data_school_c$Q39=='No')
+  
+  res <- data.frame(table(no_mobile$Q42)) %>% subset(Var1!="") 
+  base <- sum(res$Freq)
+  res$per <- roundQual(res$Freq*100/base)
+  res <- res %>% 
+    arrange(Var1=="No") %>% 
+    mutate(label=paste0(Var1,": " ,per,"%"))
+  
+  # create labels
+  # res$label_col <- ifelse(res$per<=4,'black', "white")
+  res$label_col <-"black"
+  res$hjust_var <- ifelse(res$per<=4,-2.5,.5)
+  res$Var1 <- factor(res$Var1,levels=c("Yes","No"))
+  
+  
+  df <- res %>% 
+    mutate(end = 2 * pi * cumsum(per)/sum(per),
+           start = lag(end, default = 0),
+           middle = 0.5 * (end+start),
+           hjust = ifelse(middle > pi, 1, 0),
+           vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+  
+  df$label_x <-  1.05 * sin(df$middle)
+  df$label_y <- 1.05 * cos(df$middle)
+  
+  wouldOrder<-  ggplot(df) + 
+    geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1,
+                     start = start, end = end, fill = Var1)) +
+    geom_text(aes(x =label_x, y = label_y, label = label,
+                  hjust = hjust, vjust = vjust)) +
+    scale_fill_manual(values=colors[c(5,3)],breaks=c("Yes","No")) + 
+    coord_fixed() +
+    scale_x_continuous(limits = c(-1.6, 1.6),  # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    scale_y_continuous(limits = c(-1.5, 1.5),    # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    theme_minimal() + guides(fill="none") 
+  
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide10b_ca.png"),plot=wouldOrder,width = 3.5, height=3.5,units="in")
+  
+  ########################################################################
+  # Slide 11: Additional Tech Questions
+  ########################################################################
+  
+  
+  #Q36 Eas of ordering
+  sat <- data_grp_bar('Q38', stacked_labels=TRUE,comp=T)
+  sat <- sat %>% filter(!Location%in%c("Region", "Nation"))
+  sat$hjust_var <- ifelse(sat$Percent<=4,-2.2,.5) 
+  
+  sat$Value <- as.factor(sat$Q38)
+  sat$label_col <- ifelse(sat$Value %in% c("Extremely easy","Somewhat easy"),"black","white")
+  
+  #adust label color if it is off the side to be black
+  sat$label_col <- ifelse(sat$Percent<=4,'black', sat$label_col)
+  
+  sat$Value <- factor(sat$Q38, levels <- c("Extremely easy", "Somewhat easy", "Neither easy nor difficult", 
+                                           "Somewhat difficult","Extremely difficult"))
+  
+  sat$year <- this_year
+  
+  
+  sat_plot<- ggplot(sat,aes(x=year,y=Percent,fill=Value,label=label)) + 
+    geom_bar(stat="identity",width=.5)+ 
+    geom_text(aes(x=year,y=Percent,fill=Value,label=label,color=label_col,hjust=hjust_var),force=.25,direction="y",point.padding = NA,segment.alpha=0,segment.color= "white",size = 4, position = position_stack(vjust = .5)) +
+    scale_x_discrete(position = "top")  + 
+    scale_fill_manual(values=colors,labels=paste(" ",c("Extremely easy", "Somewhat easy", "Neither", 
+                                                       "Somewhat difficult","Extremely difficult"))) +
+    scale_color_manual(values=c("black","white"))+
+    theme_minimal() + ylab("") + xlab("") + 
+    theme(panel.grid = element_blank(),
+          axis.text.y = element_blank(), legend.title = element_blank(),
+          axis.text.x=element_blank(),
+          legend.text=element_text(size=13),
+          # legend.position = "left", 
+          plot.margin = margin(l=2.7, unit="cm"),
+          legend.position=c(-0.15,0.5),
+          legend.margin=margin(t = 0, unit='cm')) + guides(color="none")
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11a_ca.png"),plot=sat_plot,width = 3.7, height=3.7,units="in")
+  
+  
+  #would like to order from mobile
+  
+  res <- data.frame(table(data_school_c$Q44)) %>% subset(Var1!="") 
+  base <- sum(res$Freq)
+  res$per <- roundQual(res$Freq*100/base)
+  res <- res %>% 
+    arrange(Var1=="No") %>% 
+    mutate(label=paste0(Var1,": " ,per,"%"))
+  
+  # create labels
+  # res$label_col <- ifelse(res$per<=4,'black', "white")
+  res$label_col <-"black"
+  res$hjust_var <- ifelse(res$per<=4,-2.5,.5)
+  res$Var1 <- factor(res$Var1,levels=c("Yes","No"))
+  
+  
+  df <- res %>% 
+    mutate(end = 2 * pi * cumsum(per)/sum(per),
+           start = lag(end, default = 0),
+           middle = 0.5 * (end+start),
+           hjust = ifelse(middle > pi, 1, 0),
+           vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+  
+  df$label_x <-  1.05 * sin(df$middle)
+  df$label_y <- 1.05 * cos(df$middle)
+  
+  wouldLike<-  ggplot(df) + 
+    geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1,
+                     start = start, end = end, fill = Var1)) +
+    geom_text(aes(x =label_x, y = label_y, label = label,
+                  hjust = hjust, vjust = vjust)) +
+    scale_fill_manual(values=colors[c(5,3)],breaks=c("Yes","No")) + 
+    coord_fixed() +
+    scale_x_continuous(limits = c(-1.6, 1.6),  # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    scale_y_continuous(limits = c(-1.5, 1.5),    # Adjust so labels are not cut off
+                       name = "", breaks = NULL, labels = NULL) +
+    theme_minimal() + guides(fill="none") 
+  
+  
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide11c_ca.png"),plot=wouldLike,width = 3.5, height=3.5,units="in")
   
   
   }
