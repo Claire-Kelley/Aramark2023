@@ -282,10 +282,11 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     university_par <- fpar(
       ftext(UNIVERSITY_NAME , prop = bold_face),fp_p = fp_par(text.align="right") )
     
-    my_pres <-  my_pres %>% on_slide(index=1) %>%
-      ph_with_fpars_at(fpars=list(university_par), 
-                       left=1.75,top=-.29,height=1,width=8
-      ) 
+    #not adding the front label for now
+    # my_pres <-  my_pres %>% on_slide(index=1) %>%
+    #   ph_with_fpars_at(fpars=list(university_par), 
+    #                    left=1.75,top=-.29,height=1,width=8
+    #   ) 
     ######################################################################
     ####### SLide 2 ######################################################
  
@@ -316,7 +317,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
   
     s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, '), Among Students/Other (n=', n_format(nrow(data_school)), ')')
     s2 <- "Q2. Which of the following best describes you?"
-    s3 <- " Q3. Where do you live?"
+    s3 <- "Q3. Where do you live?"
       
 
     
@@ -330,7 +331,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with_fpars_at(fpars=add_sample('', s1, s2, s3), 
                        left=.25,top=4.85,height=.75,width=9) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","location_2a.png"), 100/72, 76/72),
-               location = ph_location(top=1.5,left=2.5,width=4,height=3.5)) %>%
+               location = ph_location(top=1.5,left=2.5,width=4,height=3)) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","commuting_2b.png"), 100/72, 76/72),
               location = ph_location(top=1.35,left=6.2,width=3.5,height=3.5))
 
@@ -1126,11 +1127,13 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     
     
     print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
-    #find_me
+
     
     
     #
 }
+
+
 
 run_report(data, data_last, 'University of Virginia', last_year='Spring 2023')
 

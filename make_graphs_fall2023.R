@@ -488,7 +488,7 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
           legend.margin=margin(t = 0, unit='cm')) 
   
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","location_2a.png"),plot=plot21b,width = 4, height=4,units="in")
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","location_2a.png"),plot=plot21b,width = 4, height=3,units="in")
   
   
 
