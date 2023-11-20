@@ -42,10 +42,10 @@ get_quartiles <- function(this_percent,national_average,all_percents){
 
 top_two <- function(x,dataset,dot_plot=F){
   if (dot_plot){
-    roundQual(100*sum(grepl("excellent|good|^agree|somewhat agree|strongly agree|definitely will buy|probably will buy|^extremely comfortable|^very comfortable|^very important|important",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (!dataset[,x]%in%c("","Not Applicable/Don't Know"))),0)
+    roundQual(100*sum(grepl("excellent|good|^agree|somewhat agree|strongly agree|definitely will buy|probably will buy|^extremely comfortable|^very comfortable|^very important|^important|extremely satisfied|somewhat satisfied",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (!dataset[,x]%in%c("","Not Applicable/Don't Know", "N/A or Don't Know"))),0)
     
   } else {
-  roundQual(100*sum(grepl("excellent|good|^agree|somewhat agree|strongly agree|definitely will buy|probably will buy|^extremely comfortable|^very comfortable|^very important|important",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (dataset[,x]!="")),0)
+  roundQual(100*sum(grepl("excellent|good|^agree|somewhat agree|strongly agree|definitely will buy|probably will buy|^extremely comfortable|^very comfortable|^very important|^important|extremely satisfied|somewhat satisfied",tolower(dataset[,x])))/sum(!is.na(dataset[,x]) & (!dataset[,x]%in%c("","Not Applicable/Don't Know", "N/A or Don't Know"))),0)
   }
 }
 
@@ -87,13 +87,13 @@ roundQual <- function(x,n){floor(x+.5)}
 # read in data 
 
 ## Read in Data
-last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
-#last_path <- 'data_files'
+#last_path <- "C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/AramarkFall2022/data_files"
+last_path <- 'data_files'
 ### 
 
-last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
-
-last_data <- last_data[3:nrow(last_data),]
+#not using this currently
+# last_data <- read.csv(paste0(last_path,"/spring2023_final.csv"),stringsAsFactors=FALSE)
+# last_data <- last_data[3:nrow(last_data),]
 
 last_data_fall_22 <- read.csv(paste0(last_path,"/Fall2022_V2.csv"),stringsAsFactors=FALSE)
 last_data_fall_22 <- last_data_fall_22[3:nrow(last_data_fall_22),]
@@ -126,8 +126,8 @@ last_data_fall20 <- read.csv(paste0(last_path,'/fall2020_V2.csv'),stringsAsFacto
 last_data_fall20 <- last_data_fall20[3:nrow(last_data_fall20),]
 
 
-data<- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023.csv",stringsAsFactors=FALSE)
-#data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
+#data<- read.csv("C:/Users/Claire/Documents/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023.csv",stringsAsFactors=FALSE)
+data<- read.csv("Aramark_Dining_Base (Qual3538-0510DiningStyles)_October 16, 2023_10.19.csv",stringsAsFactors=FALSE)
 data <- data[3:nrow(data),]
 
 
@@ -169,8 +169,8 @@ all_reps$last_year <- ifelse((all_reps$last_year=="") & (all_reps$SCHOOL_NAME %i
 
 #for working
 UNIVERSITY_NAME <-  "University of Virginia"
-data_last <- last_data
-last_year ="Spring 2023"
+data_last <- last_data_fall_22
+last_year ="Fall 2022"
 
 
 ca_data<- read.csv("Fall2023_ca.csv")
@@ -298,26 +298,24 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       university_par <- fpar(
         ftext(UNIVERSITY_NAME , prop = bold_face),fp_p = fp_par(text.align="center") )
       
-      my_pres <-  my_pres %>% on_slide(index=1) %>%
-        ph_with_fpars_at(fpars=list(university_par), 
-                         left=.75,top=0,height=1,width=8
-        ) 
+      # my_pres <-  my_pres %>% on_slide(index=1) %>%
+      #   ph_with_fpars_at(fpars=list(university_par), 
+      #                    left=.75,top=0,height=1,width=8
+      #  ) 
  
     } else {
       university_par <- fpar(
         ftext(UNIVERSITY_NAME , prop = bold_face),fp_p = fp_par(text.align="right") )
       
-      my_pres <-  my_pres %>% on_slide(index=1) %>%
-        ph_with_fpars_at(fpars=list(university_par), 
-                         left=1.75,top=-.29,height=1,width=8
-        ) 
+      # my_pres <-  my_pres %>% on_slide(index=1) %>%
+      #   ph_with_fpars_at(fpars=list(university_par), 
+      #                    left=1.75,top=-.29,height=1,width=8
+      #  ) 
     }
     
   
     
-    
-    
-  
+
     ######################################################################
     ####### SLide 2 ######################################################
  
@@ -348,7 +346,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
   
     s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, '), Among Students/Other (n=', n_format(nrow(data_school)), ')')
     s2 <- "Q2. Which of the following best describes you?"
-    s3 <- " Q3. Where do you live?"
+    s3 <- "Q3. Where do you live?"
       
 
     
@@ -362,7 +360,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with_fpars_at(fpars=add_sample('', s1, s2, s3), 
                        left=.25,top=4.85,height=.75,width=9) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","location_2a.png"), 100/72, 76/72),
-               location = ph_location(top=1.5,left=2.5,width=4,height=3.5)) %>%
+               location = ph_location(top=1.5,left=2.5,width=4,height=3)) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","commuting_2b.png"), 100/72, 76/72),
               location = ph_location(top=1.35,left=6.2,width=3.5,height=3.5))
 
@@ -410,13 +408,14 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     questions = c("Q10_1", "Q10_2", "Q10_3", "Q10_4", "Q10_5", "Q10_6", 
                   "Q10_7", "Q10_9", "Q10_10", "Q10_11", "Q11_1", "Q11_2", "Q11_3", 
                   "Q11_4", "Q11_5", "Q11_6", "Q11_7", "Q11_8", "Q11_9")
-    q_names = c(" Food quality", " Food variety", " Availability of nutrition information", 
-                " Availability of ingredient/allergen information", " Availability of healthy options", 
-                " Price/Value", " Availability of special dietary options", 
-                " Freshness of food", " Affordability", " Made from sustainably sourced products", 
-                " Convenience", " Welcoming/Friendly staff", " Knowledgeable/Helpful staff", 
-                " Speed of service", " Cleanliness", " Hours of operation", " Place to socialize", 
-                " Comfortable dining experience", " Technology to support dining program")
+    q_names = c("Food quality", "Food variety", "Availability of nutrition information", 
+                "Availability of ingredient/allergen information", "Availability of healthy options", 
+                "Price/Value", "Availability of special dietary options", 
+                "Freshness of food", "Affordability", "Having sustainably sourced products", 
+                "Convenience", "Welcoming/Friendly staff", "Knowledgeable/Helpful staff", 
+                "Speed of service", "Cleanliness", "Hours of operation", "Having a place to socialize", 
+                "Having a comfortable dining experience", "Technology to support dining program")
+    
     
     vals <- c()
     for (q in questions){
@@ -729,7 +728,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       prefix <- ifelse(increase & comparator == 'lower than', 'Despite increase,', prefix)
   
       title <- paste0(prefix, " students rate overall experience ", comparator, " comparable segments." )
-      s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, ',', nrow(data_school_c_last), ')')
+      s1 <- paste0('Among Total Respondents (n=', UNIVERSITY_N, ', ', nrow(data_school_c_last), ')')
     } else {
       
       title <- paste0( "Students rate overall experience ", comparator, " comparable segments." )
@@ -750,7 +749,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with_fpars_at(fpars=add_sample('', "", s1, s2), 
                        left=.25,top=4.75,height=.75,width=9) %>%       
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","sat_4a.png"), 100/72, 76/72),
-           location = ph_location(top=1.5,left=.5,width=3,height=3)) %>%
+           location = ph_location(top=1.5,left=.3,width=3.5,height=3)) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","sat_4b.png"), 100/72, 76/72),
               location = ph_location(top=1.5,left=4.5,width=5,height=3))
     
@@ -759,16 +758,42 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     s1 <-  paste0('Among Total Respondents (n=', UNIVERSITY_N, ')')
     s2 <- "Q13 Please rate your satisfaction with the following dining locations."
     
+    qs <- c('Q13_1', 'Q13_2', 'Q13_3', 'Q13_4')
+    names <- c("All you care to eat", 'Retail', 'Convenience Stores', 'Coffee Shops')
+    
+    
+    vals <- c()
+    for (q in qs){
+      vals = c(vals,top_two(q,data_school_c))
+    }
+    
+    data_5 <- data.frame(cbind(names, vals))
+    data_5$vals <- as.numeric(data_5$vals)
+    data_5 <- data_5 %>% arrange(desc(vals))
+    
+    dining_loc <-   tolower(data_5[c(1),]$names)
+    
+    dining_loc <- ifelse(dining_loc %in% c('retail', 'all you care to eat'), paste(dining_loc, 'locations') ,dining_loc)
+    
+    title5 <- paste0("Respondents were the most satisfied with ",  dining_loc, '.' )
+    title_5_par <- fpar(
+      ftext(title5, fp_text( font.size = 22)))
+    
     
     my_pres <- my_pres %>% on_slide(index=5) %>%
+      ph_with_fpars_at(fpars=list(title_5_par), 
+                       left=.25,top=.2,height=.75,width=9.5 ) %>%
       ph_with_fpars_at(fpars=add_sample('', "", s1, s2), 
                        left=.25,top=4.6,height=.75,width=9) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide5.png"), 100/72, 76/72),
-              location = ph_location(top=.8,left=1.5,width=6,height=4))
+              location = ph_location(top=1.2,left=1,width=7,height=3.8))
     
+    
+   
     ####################################################
     ########################## Slide 6 #
-    s1 <-  paste0('Among Student Respondents (n=', STUDENT_N,',', nrow(data_school_last) , ')')
+
+    s1 <-  paste0('Among Student Respondents (n=', STUDENT_N,', ', nrow(data_school_last) , '), Regional Respondents (n=', nrow(data_region),'), and National Respondents (n=', nrow(data), ')')
     s2 <- "Q7. How would you rate the value you receive when dining on campus?"
     s3 <- "Q9. Which statement below best describes how you value a meal?"
     
@@ -882,11 +907,11 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with_fpars_at(fpars=add_sample('', "", s1, s2), 
                        left=.25,top=4.6,height=.75,width=9) %>%
       ph_with_fpars_at(fpars=list(top1), 
-                       left=.5,top=1.83,height=.75,width=2.5 )%>%
+                       left=.5,top=1.54,height=.75,width=2.5 )%>%
       ph_with_fpars_at(fpars=list(top2), 
-                       left=.5,top=2.14,height=.75,width=2.5 )%>%
+                       left=.5,top=1.84,height=.75,width=2.5 )%>%
       ph_with_fpars_at(fpars=list(top3), 
-                       left=.5,top=2.45,height=.75,width=2.5 )%>%
+                       left=.5,top=2.14,height=.75,width=2.5 )%>%
       ph_with_fpars_at(fpars=list(opp1), 
                        left=.6,top=3.75,height=.75,width=2.5 )%>%
       ph_with_fpars_at(fpars=list(opp2), 
@@ -894,7 +919,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with_fpars_at(fpars=list(opp3), 
                        left=.6,top=4.15,height=.75,width=2.5 ) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide7.png"), 100/72, 76/72),
-              location = ph_location(top=1.3,left=4.5,width=4.5,height=4)) 
+              location = ph_location(top=1.3,left=4.36,width=4.5,height=4)) 
     
     #################################################### 
     ########################## Slide 8 : Meal plan participation
@@ -940,7 +965,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
     eligible  <- data_school_c%>% filter(Q4 %in% c("Yes")) %>% filter(Q19!="Graduating")
     
     
-    s1 <-  paste0('Among Total Respondents/ Who Participate Even Though It Is Not Required (n=', UNIVERSITY_N, ',',n_part,'), Who Plan to be On Campus Next Year (n=', nrow(eligible), ')')
+    s1 <-  paste0('Among Total Respondents/ Who Participate Even Though It Is Not Required (n=', UNIVERSITY_N, ', ',n_part,'), Who Plan to be On Campus Next Year (n=', nrow(eligible), ')')
     s2 <- "Q15. Which of the following best describes your current participation in your school's meal plan?"
     s3 <- "Q16. What research or information did you receive that led you to purchase a meal plan?"
     s4 <- "Q20. Which of these, if any, would make you more likely to purchase a meal plan in the future?"
@@ -958,7 +983,7 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide8b.png"), 100/72, 76/72),
             location = ph_location(top=1.5,left=3.6,width=3,height=3))  %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide8c.png"), 100/72, 76/72),
-              location = ph_location(top=1.5,left=6.6,width=3,height=3.85))
+              location = ph_location(top=1.5,left=6.4,width=3.4,height=3.85))
     
     ####################################################
     ########################## Slide 9 #
@@ -1151,21 +1176,22 @@ run_report <- function(data,last_data,UNIVERSITY_NAME,ca=F,last_year) {
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide11c.png"), 100/72, 76/72),
               location = ph_location(top=3.75,left=3.15,width=2.5,height=1.2))%>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide11d.png"), 100/72, 76/72),
-              location = ph_location(top=1.6,left=6.5,width=3,height=3.5))
+              location = ph_location(top=1.6,left=6,width=4.5,height=3.5))
     
     
     
     
     
     print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
-    #find_me
+
     
     
     #
 }
 
+
+run_report(data, data_last, 'University of Virginia', last_year='Fall 2022')
 run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
-  
   graph_loc = "graphs_fall_2023/"
   
   # make student only data set 
@@ -1545,7 +1571,27 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
   s4 <- "Q25. Which of the following special dietary requirements, for personal preference or religious reasons do you follow?"
   s5 <- "Q27. How easy is it to meet dietary needs?"
   
+  qs <- c('Q13_1', 'Q13_2', 'Q13_3', 'Q13_4')
+  names <- c("All you care to eat", 'Retail', 'Convenience Stores', 'Coffee Shops')
   
+  
+  vals <- c()
+  for (q in qs){
+    vals = c(vals,top_two(q,data_school_c))
+  }
+  
+  data_5 <- data.frame(cbind(names, vals))
+  data_5$vals <- as.numeric(data_5$vals)
+  data_5 <- data_5 %>% arrange(desc(vals))
+  
+  dining_loc <-   tolower(data_5[c(1),]$names)
+  
+  dining_loc <- ifelse(dining_loc %in% c('retail', 'all you care to eat'), paste(dining_loc, 'locations') ,dining_loc)
+  
+  title5 <- paste0("Respondents were the most satisfied with ",  dining_loc, '.' )
+  title_5_par <- fpar(
+    ftext(title5, fp_text( font.size = 22)))
+
   my_pres <- my_pres %>% on_slide(index=9) %>%
     ph_with_fpars_at(fpars=list(title_9_par), 
                      left=.25,top=.2,height=.75,width=9.5 ) %>%
@@ -1565,12 +1611,6 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
             location = ph_location(top=2.5,left=2.9,width=7,height=1.7))
   
   
-  
-  
-  
-  
-   ####################################################
-  ########################## Slide 6 old #
   s1 <-  paste0('Among Student Respondents (n=', STUDENT_N,',', nrow(data_school_last) , ')')
   s2 <- "Q7. How would you rate the value you receive when dining on campus?"
   s3 <- "Q9. Which statement below best describes how you value a meal?"
@@ -1742,13 +1782,13 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
   
   eligible  <- data_school_c%>% filter(Q4 %in% c("Yes")) %>% filter(Q19!="Graduating")
   
-  #find_me
+
   
   s1 <-  paste0('Among Total Respondents/ Who Participate Even Though It Is Not Required (n=', UNIVERSITY_N, ',',n_part,'), Who Plan to be On Campus Next Year (n=', nrow(eligible), ')')
   s2 <- "Q15. Which of the following best describes your current participation in your school's meal plan?"
   s3 <- "Q16. What research or information did you receive that led you to purchase a meal plan?"
   s4 <- "Q20. Which of these, if any, would make you more likely to purchase a meal plan in the future?"
-  
+
   
   my_pres <- my_pres %>% on_slide(index=8) %>%
     ph_with_fpars_at(fpars=list(title_8_par), 
@@ -1867,6 +1907,7 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
   
   #
 }
+
 
 run_report(data, data_last, 'University of Virginia', last_year='Spring 2023')
 
