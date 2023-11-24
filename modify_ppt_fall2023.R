@@ -1202,51 +1202,15 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
   data_last <- last_data %>% filter(grepl("student|Other",Q1.1))
   
   # School data 
-  data_school_c <- data_c %>% filter(SCHOOL_USA== UNIVERSITY_NAME)
-  data_school <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) 
-  
-  data_school_c_last <- data_c_last %>% filter(SCHOOL_USA== UNIVERSITY_NAME)
-  data_school_last <- data_last %>% filter(SCHOOL_USA== UNIVERSITY_NAME) 
-  
-  if (nrow(data_school_c_last)>50) {
-    HAS_LAST = TRUE
-  } else {
-    HAS_LAST = FALSE
-  }
-  
-  #get region
-  region <- data %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
-    select(REGION_NAME) %>% slice(1)
-  
-  REGION <- region[[1]]
-  
-  data_region_c <- data_c[data_c$REGION_NAME==REGION,]
-  data_region <- data_region_c %>% filter(grepl("student|Other",Q2))
-  
-  
-  data_region_c_last <- filter(data_c_last, REGION_NAME==REGION)
-  data_region_last <- data_region_c_last %>% filter(grepl("student|Other",Q1.1))
-  
-  # add region to those without it
-  REGION <- ifelse(!grepl("Region",REGION),paste0(REGION," Region"),REGION)
-  
-  
-  #get market segment
-  market_seg <- data_c %>% filter(SCHOOL_USA== UNIVERSITY_NAME) %>% 
-    select(MARKET_SEGMENT) %>% slice(1)
-  MARKET_SEG <- market_seg[[1]]
-  data_market_c <- filter(data_c, MARKET_SEGMENT==MARKET_SEG)
-  data_market <- data_market_c %>% filter(grepl("student|Other",Q2))
-  
-  data_market_c_last <- filter(data_c_last, MARKET_SEGMENT==MARKET_SEG)
-  data_market_last <- data_market_c_last %>% filter(grepl("student|Other",Q1.1))
-  
+  data_school_c <- data_c %>% filter(SCHOOL_NAME== UNIVERSITY_NAME)
+  data_school <- data %>% filter(SCHOOL_NAME== UNIVERSITY_NAME) 
+
+ 
   UNIVERSITY_N <- n_format(nrow(data_school_c)) # sample size for universty 
   STUDENT_N <- n_format(nrow(data_school)) 
-  REGION_N <- n_format(nrow(data_region_c)) # sample size for this region
-  NATIONAL_N <- n_format(nrow(data_c)) # sample size for entire study
+   NATIONAL_N <- n_format(nrow(data_c)) # sample size for entire study
   
-  
+ 
   ################################################################################################
   # Read in template 
  
@@ -1374,9 +1338,9 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide3a.png"), 100/72, 76/72),
             location = ph_location(top=1.5,left=.75,width=2.5,height=3)) %>%
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide3b.png"), 100/72, 76/72),
-            location = ph_location(top=1.5,left=4.75,width=2.5,height=3))%>% 
+            location = ph_location(top=1.5,left=4.45,width=2.5,height=3))%>% 
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide3c.png"), 100/72, 76/72),
-            location = ph_location(top=1.5,left=7.25,width=2.5,height=3))%>% 
+            location = ph_location(top=1.5,left=7.1,width=2.75,height=3))%>% 
     ph_with_fpars_at(fpars=add_sample("",paste0( "Among Total Respondents (n=",format(nrow(data_school_c),big.mark = ","),")"),
                                       "Q5. Overall, how would you rate your campus dining program?","Q7. How would you rate the value you receive when dining on campus?",
                                       "Q9. Which statement below best describes how you value a meal?"), 
@@ -1477,7 +1441,7 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
   
   
   title_par6 <- fpar(
-    ftext(paste0(data_7$q_names[1]," and ",tolower(data_7$q_names[2]),"are the most important performance metrics."),
+    ftext(paste0(data_7$q_names[1]," and ",tolower(data_7$q_names[2])," are the most important performance metrics."),
           fp_text( font.size = 21)))
   
   s2 <- "Q11A_CAN. How important is it for your ideal campus dining program to perform well at..."
@@ -1586,11 +1550,11 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
 
   my_pres <- my_pres %>% on_slide(index=8) %>%
     ph_with_fpars_at(fpars=list(title_9_par), 
-                     left=.25,top=.2,height=.75,width=9 ) %>%
+                     left=.25,top=.2,height=.75,width=8.7 ) %>%
     ph_with_fpars_at(fpars=add_sample(s1, s2, s3, s4), 
                      left=.25,top=4.8,height=.75,width=9)%>%
     ph_with_fpars_at(fpars=list(allergy_par), 
-                     left=1.15,top=.65,height=.75,width=1 ) %>%
+                     left=1.15,top=.7,height=.75,width=1 ) %>%
     ph_with_fpars_at(fpars=list(diet_par), 
                      left=1.15,top=1.51,height=.75,width=1 ) %>%
       ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide9a.png"), 100/72, 76/72),
@@ -1742,15 +1706,27 @@ run_report_ca <- function(data,last_data,UNIVERSITY_NAME,last_year) {
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide11a_ca.png"), 100/72, 76/72),
             location = ph_location(top=1.5,left=.55,width=2.7,height=3.4)) %>%
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide11b_ca.png"), 100/72, 76/72),
-            location = ph_location(top=1.5,left=3.5,width=2.7,height=3.4))%>% 
+            location = ph_location(top=1.5,left=3.3=25,width=5,height=3.4))%>% 
     ph_with(external_img(paste0(graph_loc,UNIVERSITY_NAME,"/","slide11c_ca.png"), 100/72, 76/72),
             location = ph_location(top=1.5,left=6,width=3.3,height=3.3))
   
+  
+  
+  print(my_pres, target = paste0("fallPPTS_2023/",UNIVERSITY_NAME,".pptx"))
 
 }
 
-
 run_report(data, data_last, 'University of Virginia', last_year='Spring 2023')
+
+ca_data<- read.csv("~/Consulting/Qualtrics/Aramark2023/Aramark2023/Fall2023_ca.csv",stringsAsFactors = F)
+ca_data<- ca_data[ca_data$Status=="IP Address",] # get rid of extra tester rows
+ca_data$SCHOOL_USA <- ca_data$SCHOOL_NAME
+
+# handle renaming ca values
+
+ca_data[,gsub("Q30_","Q30ca",names(ca_data)[grep("Q30_",names(ca_data))])] <- ca_data[,grep("Q30_",names(ca_data))]
+
+run_report_ca(ca_data, data_last, 'University of Toronto Scarborough', last_year='Spring 2023')
 
 
 

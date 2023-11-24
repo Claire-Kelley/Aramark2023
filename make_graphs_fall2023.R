@@ -1811,8 +1811,9 @@ get_graphs <- function(data,data_last,UNIVERSITY_NAME,slide17_leg=-.4,slide23_le
     scale_y_continuous(limits = c(-1.6, 1.6),    # Adjust so labels are not cut off
                        name = "", breaks = NULL, labels = NULL) +
     theme_minimal() + guides(fill="none")
+
   
-  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide7a_ca.png"),plot=hasDiet,width = 3.7, height=3.7,units="in")
+  ggsave(filename = paste0(loc,UNIVERSITY_NAME,"/","slide7a_ca.png"),plot=hasDiet,width = 3, height=3,units="in")
   
   #######################################################
   ### Slide 8:  More about diet
